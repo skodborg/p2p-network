@@ -2,18 +2,18 @@ var express = require('express');
 var router = express.Router();
 
 
-
-
-/* GET home page. */
-router.get('/find_successor', function(req, res, next) {
+router.post('/find_successor', function(req, res, next) {
   var peer = req.app.get('peer');
 
-  var json = req.query.body;
+  var json = req.body;
   var id = json.id;
 
   res.setHeader('Content-Type', 'application/json');
 
-  res.send(JSON.stringify(peer.find_successor(id)));
+  peer.find_successor(id, function(json){
+    res.send(JSON.stringify(json));
+  });
+
 
 });
 
