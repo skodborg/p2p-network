@@ -21,17 +21,18 @@ function peer(id){
       // if the searched id is between this node and its successor, return the successor
       // - EDGE CASE: if this node is the last in ring (successor has lower id), and the
       //              searched id is higher, return the successor (first node in ring)
-      if(_this.id == id){
-      
+      if (_this.id == id) {
+        // searched id equals this node's id; return self
         callback(_this);
-      
-      }else if((_this.id < id  && id <= _successor.id)  || 
-               (_successor.id < _this.id && id > _this.id)){
-
-        callback(_successor);
-      
-      }else{
-        
+      } 
+      else if ((_this.id < id  && id <= _successor.id)  || 
+               (_successor.id < _this.id && id > _this.id)) {
+        // searched id is between this node and its successor; return successor
+        callback(_successor);  
+      }
+      else {
+        // searched id is not this node, nor its immediate neighbourhood;
+        // pass request around the ring through our successor
         var post_options = {
             host : _successor.ip,
             port: _successor.port,
@@ -42,7 +43,7 @@ function peer(id){
             }
         };
 
-        // Set up the request
+        // perform request and handle response
         var post_req = http.request(post_options, function(res) {
             var response = "";
             res.on('data', function (chunk) {
@@ -54,26 +55,20 @@ function peer(id){
             })
 
         });
-        post_req.write(JSON.stringify({id : id }));
-
+        post_req.write(JSON.stringify( {id : id} ));
         post_req.end();
-
       }
     }
 
     function find_predecessor(id, callback){
-      // TODO: implement
-      if(id == _this.id){
-      
+      if (id == _this.id) {
         callback(_predecessor);
-      
-      }else if((_this.id < id  && id <= _successor.id)  || 
-         (_successor.id < _this.id && id > _this.id)){
-        console.log("answer: " + _this);
+      }
+      else if ((_this.id < id  && id <= _successor.id)  || 
+               (_successor.id < _this.id && id > _this.id)) {
         callback(_this);
-      
-      }else{
-        
+      }
+      else {
         var post_options = {
             host : _successor.ip,
             port: _successor.port,
@@ -84,7 +79,6 @@ function peer(id){
             }
         };
 
-        // Set up the request
         var post_req = http.request(post_options, function(res) {
             var response = "";
             res.on('data', function (chunk) {
@@ -96,13 +90,10 @@ function peer(id){
             })
 
         });
-        post_req.write(JSON.stringify({id : id }));
-
+        post_req.write(JSON.stringify( {id : id} ));
         post_req.end();
-
       }
     }
-
 
     function join(node){
       // TODO: implement
@@ -113,8 +104,6 @@ function peer(id){
       find_predecessor : find_predecessor,
       join : join
     }
-
-
 }
 
 
