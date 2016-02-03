@@ -1,2 +1,0 @@
-killall npm
-killall node
