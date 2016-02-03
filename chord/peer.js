@@ -17,9 +17,10 @@ function peer(id){
 
 
     function find_successor(id, callback){
-
       
-      // TODO EXPLAIN EDGE CASE, ID IS HIGHER THEN LAST NODE IN RING
+      // if the searched id is between this node and its successor, return the successor
+      // - EDGE CASE: if this node is the last in ring (successor has lower id), and the
+      //              searched id is higher, return the successor (first node in ring)
       if((_this.id < id  && id <= _successor.id)  || 
          (_successor.id < _this.id && id > _this.id)){
 
