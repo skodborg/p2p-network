@@ -17,13 +17,17 @@ router.post('/find_successor', function(req, res, next) {
 
 });
 
-router.get('/find_predecessor', function(req, res, next) {
+router.post('/find_predecessor', function(req, res, next) {
   var peer = req.app.get('peer');
 
+  var json = req.body;
+  var id = json.id;
 
   res.setHeader('Content-Type', 'application/json');
-  
-  res.send(JSON.stringify(peer.find_predecessor(0)));
+
+  peer.find_predecessor(id, function(json){
+    res.send(JSON.stringify(json));
+  });
 });
 
 

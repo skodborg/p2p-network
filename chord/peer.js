@@ -3,9 +3,9 @@ var http = require('http');
 
 function peer(id){
 
-    // var _this = { id : 2000, ip : 'localhost', port: 2000};
-    // var _successor = { id : 2002, ip : 'localhost', port: 2002};
-    // var _predecessor = { id : 2004, ip : 'localhost', port: 2004};
+    var _this = { id : 2000, ip : 'localhost', port: 2000};
+    var _successor = { id : 2002, ip : 'localhost', port: 2002};
+    var _predecessor = { id : 2004, ip : 'localhost', port: 2004};
 
     // var _this = { id : 2002, ip : 'localhost', port: 2002};
     // var _successor = { id : 2004, ip : 'localhost', port: 2004};
@@ -56,9 +56,42 @@ function peer(id){
       }
     }
 
-    function find_predecessor(id){
+    function find_predecessor(id, callback){
       // TODO: implement
-      return { successor : _successor };
+      if((_this.id < id  && id <= _successor.id)  || 
+         (_successor.id < _this.id && id > _this.id)){
+        console.log("answer: " + _this);
+        callback(_this);
+      
+      }else{
+        
+        var post_options = {
+            host : _successor.ip,
+            port: _successor.port,
+            path: '/peerRequests/find_predecessor',
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+            }
+        };
+
+        // Set up the request
+        var post_req = http.request(post_options, function(res) {
+            var response = "";
+            res.on('data', function (chunk) {
+              response += chunk;
+            });
+
+            res.on('end', function(){
+              callback(JSON.parse(response));
+            })
+
+        });
+        post_req.write(JSON.stringify({id : id }));
+
+        post_req.end();
+
+      }
     }
 
 
