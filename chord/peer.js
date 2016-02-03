@@ -3,24 +3,28 @@ var http = require('http');
 
 function peer(id){
 
-    var _this = { id : 2000, ip : 'localhost', port: 2000};
-    var _successor = { id : 2002, ip : 'localhost', port: 2002};
-    var _predecessor = { id : 2004, ip : 'localhost', port: 2004};
+    // var _this = { id : 2000, ip : 'localhost', port: 2000};
+    // var _successor = { id : 2002, ip : 'localhost', port: 2002};
+    // var _predecessor = { id : 2004, ip : 'localhost', port: 2004};
 
     // var _this = { id : 2002, ip : 'localhost', port: 2002};
     // var _successor = { id : 2004, ip : 'localhost', port: 2004};
     // var _predecessor = { id : 2000, ip : 'localhost', port: 2000};
 
-    // var _this = { id : 2004, ip : 'localhost', port: 2004};
-    // var _successor = { id : 2000, ip : 'localhost', port: 2000};
-    // var _predecessor = { id : 2002, ip : 'localhost', port: 2002};
+    var _this = { id : 2004, ip : 'localhost', port: 2004};
+    var _successor = { id : 2000, ip : 'localhost', port: 2000};
+    var _predecessor = { id : 2002, ip : 'localhost', port: 2002};
 
 
     function find_successor(id, callback){
 
       
       // TODO EXPLAIN EDGE CASE, ID IS HIGHER THEN LAST NODE IN RING
-      if((_this.id < id  && id <= _successor.id)  || 
+      if(_this.id == id){
+      
+        callback(_this);
+      
+      }else if((_this.id < id  && id <= _successor.id)  || 
          (_successor.id < _this.id && id > _this.id)){
 
         callback(_successor);
@@ -58,7 +62,11 @@ function peer(id){
 
     function find_predecessor(id, callback){
       // TODO: implement
-      if((_this.id < id  && id <= _successor.id)  || 
+      if(id == _this.id){
+      
+        callback(_predecessor);
+      
+      }else if((_this.id < id  && id <= _successor.id)  || 
          (_successor.id < _this.id && id > _this.id)){
         console.log("answer: " + _this);
         callback(_this);
