@@ -2,4 +2,7 @@ extends layout
 
 block content
   h1= title
-  p Welcome to #{title}
+  p Predecessor id: #{predecessor.id}. Link: 
+    a(href="http://#{predecessor.ip}:#{predecessor.port}") #{predecessor.ip}:#{predecessor.port}
+  p Successor id: #{successor.id}. Link: 
+    a(href="http://#{successor.ip}:#{successor.port}") #{successor.ip}:#{successor.port}

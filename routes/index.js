@@ -9,7 +9,7 @@ router.get('/', function(req, res, next) {
   var peer = req.app.get('peer');
 
 
-  res.render('index', { title: 'Succes: ' + peer.find_sucessor(0)  });
+  res.render('index', { successor : peer.get_successor() , predecessor : peer.get_predecessor()  });
 });
 
 module.exports = router;

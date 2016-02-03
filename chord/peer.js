@@ -15,6 +15,13 @@ function peer(id){
     var _successor = { id : 2000, ip : 'localhost', port: 2000};
     var _predecessor = { id : 2002, ip : 'localhost', port: 2002};
 
+    function get_successor(){
+      return _successor;
+    }
+
+    function get_predecessor(){
+      return _predecessor;
+    }
 
     function find_successor(id, callback){
       
@@ -102,7 +109,9 @@ function peer(id){
     return {
       find_successor : find_successor,
       find_predecessor : find_predecessor,
-      join : join
+      join : join,
+      get_successor : get_successor,
+      get_predecessor : get_predecessor
     }
 }
 
