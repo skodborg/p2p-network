@@ -17,4 +17,11 @@ router.post('/', function(req, res, next) {
   res.render('index', { successor : peer.get_successor() , predecessor : peer.get_predecessor()  });
 });
 
+router.post('/stabilize', function(req, res, next) {
+  var peer = req.app.get('peer');
+
+  peer.stabilize();
+  res.render('index', { successor : peer.get_successor() , predecessor : peer.get_predecessor()  });
+});
+
 module.exports = router;

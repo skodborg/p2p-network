@@ -2,11 +2,24 @@ var http = require('http');
 
 
 function peer(id, succ_id, pred_id){
+    var _successor;
+    var _predecessor;
+
+    if(succ_id == "null"){
+       _successor = { id : "null", ip : "null", port: "null"};
+    }else{
+      _successor = { id : succ_id, ip : 'localhost', port: succ_id};
+    }
+
+    if(pred_id == "null"){
+      _predecessor = { id : "null", ip : "null", port: "null"};
+    }else{
+       _predecessor = { id : pred_id, ip : 'localhost', port: pred_id};
+    }
 
     // NOTE: id equals port for now
     var _this = { id : id, ip : 'localhost', port: id};
-    var _successor = { id : succ_id, ip : 'localhost', port: succ_id};
-    var _predecessor = { id : pred_id, ip : 'localhost', port: pred_id};
+
 
     function get_successor(){
       return _successor;
@@ -56,8 +69,11 @@ function peer(id, succ_id, pred_id){
     }
 
     function notify(peer){
-      
-      if((peer.id < _this.id && peer.id > _predecessor.id) ||
+      if(_predecessor.id == "null"){
+
+        _predecessor = peer;
+
+      }else if((peer.id < _this.id && peer.id > _predecessor.id) ||
           (_predecessor.id > _this.id && peer.id > _predecessor.id)){
         _predecessor = peer;
       }
@@ -71,6 +87,20 @@ function peer(id, succ_id, pred_id){
       });
     }
 
+    function stabilize(){
+      httpRequest(_successor, '/peerRequests/find_predecessor', {id : _successor.id} , function(response){
+              var successorsPredecessor = JSON.parse(response);
+              if(successorsPredecessor.id < _successor.id &&
+                 successorsPredecessor.id > _this.id) {
+                _successor = successorsPredecessor;
+                console.log("notify " + JSON.stringify(_successor))
+                httpRequest(_successor, '/peerRequests/notify', _this , function(response){
+                  console.log("response")
+                });
+              }
+        });
+    }
+
 
 
 
@@ -80,7 +110,8 @@ function peer(id, succ_id, pred_id){
       join : join,
       get_successor : get_successor,
       get_predecessor : get_predecessor,
-      notify : notify
+      notify : notify,
+      stabilize : stabilize
     }
 
 

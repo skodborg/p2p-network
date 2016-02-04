@@ -31,10 +31,11 @@ router.post('/find_predecessor', function(req, res, next) {
 });
 
 router.post('/notify', function(req, res, next){
+  console.log("NOTIFY RECIVED")
   var peer = req.app.get('peer');
 
   var newPeer = req.body;
-  
+
   peer.notify(newPeer);
 });
 
