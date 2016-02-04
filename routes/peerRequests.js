@@ -30,6 +30,15 @@ router.post('/find_predecessor', function(req, res, next) {
   });
 });
 
+router.post('/notify', function(req, res, next){
+  var peer = req.app.get('peer');
+
+  var newPeer = req.body;
+  
+  peer.notify(newPeer);
+});
+
+
 
 router.get('/join', function(req, res, next) {
   var peer = req.app.get('peer');

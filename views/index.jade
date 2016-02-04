@@ -6,3 +6,15 @@ block content
     a(href="http://#{predecessor.ip}:#{predecessor.port}") #{predecessor.ip}:#{predecessor.port}
   p Successor id: #{successor.id}. Link: 
     a(href="http://#{successor.ip}:#{successor.port}") #{successor.ip}:#{successor.port}
+  form(action="", method="POST")
+    div.input
+        p id:
+        input(type="text", name="id")
+    div.input
+        p ip:
+        input(type="text", name="ip")
+    div.input
+        p port:
+        input(type="text", name="port")
+    div.actions
+        input(type="submit", value="join peer")

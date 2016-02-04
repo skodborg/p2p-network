@@ -49,45 +49,30 @@ function peer(id, succ_id, pred_id){
         callback(_this);
       }
       else {
-        var post_options = {
-            host : _successor.ip,
-            port: _successor.port,
-            path: '/peerRequests/find_predecessor',
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-            }
-        };
-
-        var post_req = http.request(post_options, function(res) {
-            var response = "";
-            res.on('data', function (chunk) {
-              response += chunk;
-            });
-
-            res.on('end', function(){
+        httpRequest(_successor, '/peerRequests/find_predecessor', {id : id} , function(response){
               callback(JSON.parse(response));
-            })
-
         });
-        post_req.write(JSON.stringify( {id : id} ));
-        post_req.end();
       }
     }
 
     function notify(peer){
       
-      if(peer.id < _this.id && peer.id > _predecessor.id){
+      if((peer.id < _this.id && peer.id > _predecessor.id) ||
+          (_predecessor.id > _this.id && peer.id > _predecessor.id)){
         _predecessor = peer;
-      }else if(peer.id < _successor.id){
-        _successor = peer;
       }
 
     }
 
     function join(peer){
-
+      httpRequest(peer, '/peerRequests/find_successor', {id : _this.id} , function(response){
+        _successor = JSON.parse(response);
+        httpRequest(_successor, '/peerRequests/notify', _this , function(response){});
+      });
     }
+
+
+
 
     return {
       find_successor : find_successor,
