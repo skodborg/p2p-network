@@ -40,30 +40,10 @@ function peer(id){
       else {
         // searched id is not this node, nor its immediate neighbourhood;
         // pass request around the ring through our successor
-        var post_options = {
-            host : _successor.ip,
-            port: _successor.port,
-            path: '/peerRequests/find_successor',
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-            }
-        };
-
-        // perform request and handle response
-        var post_req = http.request(post_options, function(res) {
-            var response = "";
-            res.on('data', function (chunk) {
-              response += chunk;
-            });
-
-            res.on('end', function(){
+        httpRequest(_successor, '/peerRequests/find_successor', {id : id} , function(response){
               callback(JSON.parse(response));
-            })
-
         });
-        post_req.write(JSON.stringify( {id : id} ));
-        post_req.end();
+        
       }
     }
 
@@ -102,8 +82,18 @@ function peer(id){
       }
     }
 
-    function join(node){
-      // TODO: implement
+    function notify(peer){
+      
+      if(peer.id < _this.id && peer.id > _predecessor.id){
+        _predecessor = peer;
+      }else if(peer.id < _successor.id){
+        _successor = peer;
+      }
+
+    }
+
+    function join(peer){
+
     }
 
     return {
@@ -111,7 +101,36 @@ function peer(id){
       find_predecessor : find_predecessor,
       join : join,
       get_successor : get_successor,
-      get_predecessor : get_predecessor
+      get_predecessor : get_predecessor,
+      notify : notify
+    }
+
+
+    function httpRequest(peer, link, content, callback){
+      var post_options = {
+            host : peer.ip,
+            port: peer.port,
+            path: link,
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+            }
+        };
+
+        // perform request and handle response
+        var post_req = http.request(post_options, function(res) {
+            var response = "";
+            res.on('data', function (chunk) {
+              response += chunk;
+            });
+
+            res.on('end', function(){
+              callback(response);
+            })
+
+        });
+        post_req.write(JSON.stringify( content ));
+        post_req.end();
     }
 }
 
