@@ -90,8 +90,9 @@ function peer(id, succ_id, pred_id){
     function stabilize(){
       httpRequest(_successor, '/peerRequests/find_predecessor', {id : _successor.id} , function(response){
               var successorsPredecessor = JSON.parse(response);
-              if(successorsPredecessor.id < _successor.id &&
-                 successorsPredecessor.id > _this.id) {
+
+              if((successorsPredecessor.id < _successor.id && successorsPredecessor.id > _this.id) ||
+                 (_this.id > _successor.id && successorsPredecessor.id > _this.id)) {
                 _successor = successorsPredecessor;
                 console.log("notify " + JSON.stringify(_successor))
                 httpRequest(_successor, '/peerRequests/notify', _this , function(response){
