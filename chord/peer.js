@@ -1,5 +1,8 @@
 var http = require('http');
 
+// TODO: Handle leaving of ring
+// TODO: henover toppen i stabilize
+// TODO: Join/stabilize crasher
 
 function peer(id, succ_id, pred_id){
     var _successor;

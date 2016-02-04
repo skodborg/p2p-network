@@ -21,3 +21,10 @@ block content
   form(action="stabilize", method="POST")
     div.input
         input(type="submit", value="STABILIZE")
+  form(action="findID", method="POST")
+    div.input
+        p search for id:
+        input(type="text", name="id")
+    div.input
+        input(type="submit", value="SEARCH")
+  a(href="http://#{searchResult.ip}:#{searchResult.port}") #{searchResult.id}
