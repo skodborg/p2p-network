@@ -37,6 +37,7 @@ router.post('/notify', function(req, res, next){
   var newPeer = req.body;
 
   peer.notify(newPeer);
+  res.send({status : "ok"});
 });
 
 
