@@ -1,19 +1,12 @@
 var http = require('http');
 
 
-function peer(id){
+function peer(id, succ_id, pred_id){
 
-    // var _this = { id : 2000, ip : 'localhost', port: 2000};
-    // var _successor = { id : 2002, ip : 'localhost', port: 2002};
-    // var _predecessor = { id : 2004, ip : 'localhost', port: 2004};
-
-    // var _this = { id : 2002, ip : 'localhost', port: 2002};
-    // var _successor = { id : 2004, ip : 'localhost', port: 2004};
-    // var _predecessor = { id : 2000, ip : 'localhost', port: 2000};
-
-    var _this = { id : 2004, ip : 'localhost', port: 2004};
-    var _successor = { id : 2000, ip : 'localhost', port: 2000};
-    var _predecessor = { id : 2002, ip : 'localhost', port: 2002};
+    // NOTE: id equals port for now
+    var _this = { id : id, ip : 'localhost', port: id};
+    var _successor = { id : succ_id, ip : 'localhost', port: succ_id};
+    var _predecessor = { id : pred_id, ip : 'localhost', port: pred_id};
 
     function get_successor(){
       return _successor;
@@ -135,4 +128,4 @@ function peer(id){
 }
 
 
-module.exports = new peer(process.env.PORT);
+module.exports = new peer(process.env.PORT, process.env.PORTSUCC, process.env.PORTPRED);
