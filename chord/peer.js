@@ -56,7 +56,7 @@ function peer(id, succ_id, pred_id) {
       // if the searched id is between this node and its successor, return the successor
       // - EDGE CASE: if this node is the last in ring (successor has lower id), and the
       //              searched id is higher, return the successor (first node in ring)
-      if (_this.id == id) {
+      if (_this.id == id || _this.id == _successor.id) {
         // searched id equals this node's id; return self
         callback(_this);
       } 
@@ -76,7 +76,7 @@ function peer(id, succ_id, pred_id) {
     }
 
     function find_predecessor(id, callback) {
-      if (id == _this.id) {
+      if (id == _this.id || (_this.id == _predecessor.id)) {
         callback(_predecessor);
       }
       else if ((_this.id < id  && id <= _successor.id)  || 
@@ -92,7 +92,7 @@ function peer(id, succ_id, pred_id) {
 
     function notify(peer) {
       console.log("notify  " + peer);
-      if (_predecessor.id == "null") {
+      if (_predecessor.id == "null" || (_this.id == _successor.id && _this.id == _predecessor.id)) {
         _predecessor = peer;
       }
       else if ((peer.id < _this.id && peer.id > _predecessor.id) ||
@@ -122,7 +122,8 @@ function peer(id, succ_id, pred_id) {
           });
         }
         else if ((successorsPredecessor.id < _successor.id && successorsPredecessor.id > _this.id) ||
-           (_this.id > _successor.id && successorsPredecessor.id > _this.id)) {
+           (_this.id > _successor.id && successorsPredecessor.id > _this.id)||
+           _successor.id == _this.id) {
           _successor = successorsPredecessor;
           // TODO: delete below console log?
           console.log("notify " + JSON.stringify(_successor))
@@ -130,7 +131,7 @@ function peer(id, succ_id, pred_id) {
             // TODO: delete below console log?
             console.log("response")
           });
-        }
+        } 
       });
     }
 

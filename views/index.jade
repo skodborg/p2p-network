@@ -9,13 +9,13 @@ block content
   form(action="", method="POST")
     div.input
         p id:
-        input(type="text", name="id")
+        input(type="text", name="id", value="2000")
     div.input
         p ip:
-        input(type="text", name="ip")
+        input(type="text", name="ip", value="localhost")
     div.input
         p port:
-        input(type="text", name="port")
+        input(type="text", name="port", value="2000")
     div.actions
         input(type="submit", value="join peer")
   form(action="stabilize", method="POST")
@@ -27,5 +27,7 @@ block content
         input(type="text", name="id")
     div.input
         input(type="submit", value="SEARCH")
-  a(href="leave") Leave Chord Ring
-  a(href="http://#{searchResult.ip}:#{searchResult.port}") #{searchResult.id}
+  div.leave
+    a(href="leave") Leave Chord Ring
+  div.searchResult
+    a(href="http://#{searchResult.ip}:#{searchResult.port}") #{searchResult.id}
