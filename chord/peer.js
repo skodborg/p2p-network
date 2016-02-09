@@ -1,28 +1,41 @@
 var http = require('http');
-
+const crypto = require('crypto');
 var nullPeer = { id : "null", ip : "null", port: "null" };
 
-function peer(id, succ_id, pred_id) {
+function peer(port, succ_port, pred_port) {
     var _successor;
     var _predecessor;
 
-    if (succ_id == "null") {
+    function hashId(id){
+      return crypto.createHash('sha256').update(id).digest('hex');
+    }
+
+    function createPeer(ip, port){
+      return {id : hashId(ip + port), ip : ip, port: port};
+    }
+
+    if (succ_port == "null") {
       _successor = nullPeer;
     }
     else {
-      _successor = { id : succ_id, ip : 'localhost', port: succ_id };
+      _successor = createPeer('localhost', succ_port);
     }
 
-    if (pred_id == "null") {
+
+    if (pred_port == "null") {
       _predecessor = nullPeer;
     }
     else {
-      _predecessor = { id : pred_id, ip : 'localhost', port: pred_id };
+      _predecessor = createPeer('localhost', pred_port);
     }
 
     // NOTE: id equals port for now
-    var _this = { id : id, ip : 'localhost', port: id};
+    var _this = createPeer('localhost', port);
 
+
+    function get_this(){
+      return _this;
+    }
 
     function get_successor() {
       return _successor;
@@ -150,7 +163,8 @@ function peer(id, succ_id, pred_id) {
       stabilize : stabilize,
       notifyPredecessor : notifyPredecessor,
       notifySuccessor : notifySuccessor,
-      leave : leave
+      leave : leave,
+      get_this : get_this
 
     }
 

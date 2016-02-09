@@ -1,15 +1,12 @@
 extends layout
 
 block content
-  h1= title
+  h1= thisId
   p Predecessor id: #{predecessor.id}. Link: 
     a(href="http://#{predecessor.ip}:#{predecessor.port}") #{predecessor.ip}:#{predecessor.port}
   p Successor id: #{successor.id}. Link: 
     a(href="http://#{successor.ip}:#{successor.port}") #{successor.ip}:#{successor.port}
   form(action="", method="POST")
-    div.input
-        p id:
-        input(type="text", name="id", value="2000")
     div.input
         p ip:
         input(type="text", name="ip", value="localhost")
