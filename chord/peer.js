@@ -2,19 +2,21 @@ var http = require('http');
 
 // TODO: Handle leaving of ring
 
+var nullPeer = { id : "null", ip : "null", port: "null" };
+
 function peer(id, succ_id, pred_id) {
     var _successor;
     var _predecessor;
 
     if (succ_id == "null") {
-      _successor = { id : "null", ip : "null", port: "null" };
+      _successor = nullPeer;
     }
     else {
       _successor = { id : succ_id, ip : 'localhost', port: succ_id };
     }
 
     if (pred_id == "null") {
-      _predecessor = { id : "null", ip : "null", port: "null" };
+      _predecessor = nullPeer;
     }
     else {
       _predecessor = { id : pred_id, ip : 'localhost', port: pred_id };
@@ -30,6 +32,23 @@ function peer(id, succ_id, pred_id) {
 
     function get_predecessor() {
       return _predecessor;
+    }
+
+    function notifyPredecessor(){
+      _predecessor = nullPeer;
+    }
+
+    function notifySuccessor(node){
+      _successor = node;
+    }
+
+    function leave(){
+      httpRequest(_successor, '/peerRequests/notify_predecessor', {} , function(response){
+            httpRequest(_predecessor, '/peerRequests/notify_successor', _successor , function(response){
+                  _successor = nullPeer;
+                  _predecessor = nullPeer;
+            });      
+      });
     }
 
     function find_successor(id, callback) {
@@ -72,6 +91,7 @@ function peer(id, succ_id, pred_id) {
     }
 
     function notify(peer) {
+      console.log("notify  " + peer);
       if (_predecessor.id == "null") {
         _predecessor = peer;
       }
@@ -92,7 +112,16 @@ function peer(id, succ_id, pred_id) {
       httpRequest(_successor, '/peerRequests/find_predecessor', {id : _successor.id}, function(response){
         var successorsPredecessor = JSON.parse(response);
 
-        if((successorsPredecessor.id < _successor.id && successorsPredecessor.id > _this.id) ||
+        console.log("find_pred response: " + JSON.stringify(successorsPredecessor));
+        console.log("nullPeer: " + JSON.stringify(nullPeer));
+
+        if(JSON.stringify(successorsPredecessor) == JSON.stringify(nullPeer)){
+          httpRequest(_successor, '/peerRequests/notify', _this , function(response){
+            // TODO: delete below console log?
+            console.log("response")
+          });
+        }
+        else if ((successorsPredecessor.id < _successor.id && successorsPredecessor.id > _this.id) ||
            (_this.id > _successor.id && successorsPredecessor.id > _this.id)) {
           _successor = successorsPredecessor;
           // TODO: delete below console log?
@@ -112,7 +141,11 @@ function peer(id, succ_id, pred_id) {
       get_successor : get_successor,
       get_predecessor : get_predecessor,
       notify : notify,
-      stabilize : stabilize
+      stabilize : stabilize,
+      notifyPredecessor : notifyPredecessor,
+      notifySuccessor : notifySuccessor,
+      leave : leave
+
     }
 
 

@@ -25,6 +25,13 @@ router.post('/stabilize', function(req, res, next) {
   res.render('index', { successor : peer.get_successor() , predecessor : peer.get_predecessor(), searchResult : ""  });
 });
 
+router.get('/leave', function(req, res, next) {
+  var peer = req.app.get('peer');
+
+  peer.leave();
+  res.render('index', { successor : peer.get_successor() , predecessor : peer.get_predecessor(), searchResult : ""  });
+});
+
 router.post('/findID', function(req, res, next) {
   var peer = req.app.get('peer');
   peer.find_successor(req.body.id, function(json){

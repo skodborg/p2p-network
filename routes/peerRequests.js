@@ -17,6 +17,24 @@ router.post('/find_successor', function(req, res, next) {
 
 });
 
+router.post('/notify_predecessor', function(req, res, next){
+  var peer = req.app.get('peer');
+
+  peer.notifyPredecessor();
+
+  res.send("OK");
+});
+
+router.post('/notify_successor', function(req, res, next){
+  var peer = req.app.get('peer');
+
+  var node = req.body;
+
+  peer.notifySuccessor(node);
+
+  res.send("OK");
+});
+
 router.post('/find_predecessor', function(req, res, next) {
   var peer = req.app.get('peer');
 
