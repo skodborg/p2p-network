@@ -95,8 +95,10 @@ function peer(id, succ_id, pred_id) {
         if((successorsPredecessor.id < _successor.id && successorsPredecessor.id > _this.id) ||
            (_this.id > _successor.id && successorsPredecessor.id > _this.id)) {
           _successor = successorsPredecessor;
+          // TODO: delete below console log?
           console.log("notify " + JSON.stringify(_successor))
           httpRequest(_successor, '/peerRequests/notify', _this , function(response){
+            // TODO: delete below console log?
             console.log("response")
           });
         }
