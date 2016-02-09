@@ -146,7 +146,8 @@ function peer(port, succ_port, pred_port) {
         }
 
         // if our successor's predecessor should actually be our new successor, update
-        else if ((successorsPredecessor.id < _successor.id && successorsPredecessor.id > _this.id)      || (_this.id > _successor.id && successorsPredecessor.id > _this.id)) {
+        else if ((successorsPredecessor.id < _successor.id && successorsPredecessor.id > _this.id)
+                || (_this.id > _successor.id && successorsPredecessor.id > _this.id)) {
           _successor = successorsPredecessor;
           httpRequest(_successor, '/peerRequests/notify', _this , function(response){});
         }
