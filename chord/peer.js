@@ -126,13 +126,11 @@ function peer(id, succ_id, pred_id) {
         var successorsPredecessor = JSON.parse(response);
 
         if(JSON.stringify(successorsPredecessor) == JSON.stringify(nullPeer)){
-          httpRequest(_successor, '/peerRequests/notify', _this , function(response){
-            // TODO: delete below console log?
-            console.log("response")
-          });
+          httpRequest(_successor, '/peerRequests/notify', _this , function(response){});
         }
         else if ((successorsPredecessor.id < _successor.id && successorsPredecessor.id > _this.id) ||
-           (_this.id > _successor.id && successorsPredecessor.id > _this.id)) {
+           (_this.id > _successor.id && successorsPredecessor.id > _this.id)||
+           _successor.id == _this.id) {
           _successor = successorsPredecessor;
           httpRequest(_successor, '/peerRequests/notify', _this , function(response){});
         }
