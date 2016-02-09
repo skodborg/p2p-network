@@ -2,20 +2,23 @@ var express = require('express');
 var router = express.Router();
 
 
-
-
-/* GET home page. */
-router.get('/', function(req, res, next) {
+function handleBaseDesign(req, res, next){
   var peer = req.app.get('peer');
   res.render('index', 
-  	{ thisId : peer.get_this().id , successor : peer.get_successor() , predecessor : peer.get_predecessor(), searchResult : ""});
-});
+    { thisId : peer.get_this().id , successor : peer.get_successor() , predecessor : peer.get_predecessor(), searchResult : ""});
+}
 
-router.post('/', function(req, res, next) {
+/* GET home page. */
+router.get('/', handleBaseDesign);
+router.get('/join', handleBaseDesign);
+router.get('/stabilize', handleBaseDesign);
+router.get('/findID', handleBaseDesign);
+
+router.post('/join', function(req, res, next) {
   var peer = req.app.get('peer');
 
   peer.join(req.body);
-  
+
   res.render('index', { thisId : peer.get_this().id , successor : peer.get_successor() , predecessor : peer.get_predecessor(), searchResult : ""  });
 });
 

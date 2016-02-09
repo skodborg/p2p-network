@@ -6,7 +6,7 @@ block content
     a(href="http://#{predecessor.ip}:#{predecessor.port}") #{predecessor.ip}:#{predecessor.port}
   p Successor id: #{successor.id}. Link: 
     a(href="http://#{successor.ip}:#{successor.port}") #{successor.ip}:#{successor.port}
-  form(action="", method="POST")
+  form(action="join", method="POST")
     div.input
         p ip:
         input(type="text", name="ip", value="localhost")

@@ -95,8 +95,7 @@ function peer(port, succ_port, pred_port) {
       if (_this.id == _successor.id && _this.id == _predecessor.id) {
         callback(_this);
       }
-
-      if (id == _this.id) {
+      else if (id == _this.id) {
         callback(_predecessor);
       }
       else if ((_this.id < id  && id <= _successor.id)  || 
@@ -104,6 +103,7 @@ function peer(port, succ_port, pred_port) {
         callback(_this);
       }
       else {
+
         httpRequest(_successor, '/peerRequests/find_predecessor', {id : id} , function(response){
               callback(JSON.parse(response));
         });
@@ -137,6 +137,9 @@ function peer(port, succ_port, pred_port) {
     }
 
     function stabilize() {
+      if(_successor.id == "null" && _predecessor.id == "null"){
+        return;
+      }
       httpRequest(_successor, '/peerRequests/find_predecessor', {id : _successor.id}, function(response){
         var successorsPredecessor = JSON.parse(response);
 
@@ -152,21 +155,8 @@ function peer(port, succ_port, pred_port) {
         }
       });
     }
-
-    return {
-      find_successor : find_successor,
-      find_predecessor : find_predecessor,
-      join : join,
-      get_successor : get_successor,
-      get_predecessor : get_predecessor,
-      notify : notify,
-      stabilize : stabilize,
-      notifyPredecessor : notifyPredecessor,
-      notifySuccessor : notifySuccessor,
-      leave : leave,
-      get_this : get_this
-
-    }
+    
+    
 
 
     function httpRequest(peer, link, content, callback) {
@@ -195,7 +185,30 @@ function peer(port, succ_port, pred_port) {
       post_req.write(JSON.stringify( content ));
       post_req.end();
     }
+    if(process.env.STABILIZE == 'ON'){
+      setInterval(stabilize, 1000);
+    }
+    
+
+return {
+      find_successor : find_successor,
+      find_predecessor : find_predecessor,
+      join : join,
+      get_successor : get_successor,
+      get_predecessor : get_predecessor,
+      notify : notify,
+      stabilize : stabilize,
+      notifyPredecessor : notifyPredecessor,
+      notifySuccessor : notifySuccessor,
+      leave : leave,
+      get_this : get_this
+
+    }
+
+
+      
 }
 
 
 module.exports = new peer(process.env.PORT, process.env.PORTSUCC, process.env.PORTPRED);
+
