@@ -1,7 +1,5 @@
 var http = require('http');
 
-// TODO: Handle leaving of ring
-
 var nullPeer = { id : "null", ip : "null", port: "null" };
 
 function peer(id, succ_id, pred_id) {
@@ -52,11 +50,16 @@ function peer(id, succ_id, pred_id) {
     }
 
     function find_successor(id, callback) {
+      // base case: only one node in ring, it is the successor of everything
+      if (_this.id == _successor.id && _this.id == _predecessor.id) {
+        callback(_this);
+      }
+
       
       // if the searched id is between this node and its successor, return the successor
       // - EDGE CASE: if this node is the last in ring (successor has lower id), and the
       //              searched id is higher, return the successor (first node in ring)
-      if (_this.id == id) {
+      else if (_this.id == id) {
         // searched id equals this node's id; return self
         callback(_this);
       } 
@@ -76,6 +79,11 @@ function peer(id, succ_id, pred_id) {
     }
 
     function find_predecessor(id, callback) {
+      // base case: only one node in ring, it is the predecessor of everything
+      if (_this.id == _successor.id && _this.id == _predecessor.id) {
+        callback(_this);
+      }
+
       if (id == _this.id) {
         callback(_predecessor);
       }
@@ -91,7 +99,12 @@ function peer(id, succ_id, pred_id) {
     }
 
     function notify(peer) {
-      console.log("notify  " + peer);
+      // base case: only one node in ring, the peer is now our new successor AND predecessor.
+      if (_this.id == _successor.id && _this.id == _predecessor.id) {
+        _predecessor = peer;
+        _successor = peer;
+      }
+
       if (_predecessor.id == "null") {
         _predecessor = peer;
       }
@@ -112,9 +125,6 @@ function peer(id, succ_id, pred_id) {
       httpRequest(_successor, '/peerRequests/find_predecessor', {id : _successor.id}, function(response){
         var successorsPredecessor = JSON.parse(response);
 
-        console.log("find_pred response: " + JSON.stringify(successorsPredecessor));
-        console.log("nullPeer: " + JSON.stringify(nullPeer));
-
         if(JSON.stringify(successorsPredecessor) == JSON.stringify(nullPeer)){
           httpRequest(_successor, '/peerRequests/notify', _this , function(response){
             // TODO: delete below console log?
@@ -124,12 +134,7 @@ function peer(id, succ_id, pred_id) {
         else if ((successorsPredecessor.id < _successor.id && successorsPredecessor.id > _this.id) ||
            (_this.id > _successor.id && successorsPredecessor.id > _this.id)) {
           _successor = successorsPredecessor;
-          // TODO: delete below console log?
-          console.log("notify " + JSON.stringify(_successor))
-          httpRequest(_successor, '/peerRequests/notify', _this , function(response){
-            // TODO: delete below console log?
-            console.log("response")
-          });
+          httpRequest(_successor, '/peerRequests/notify', _this , function(response){});
         }
       });
     }
