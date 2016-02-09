@@ -54,7 +54,6 @@ function peer(id, succ_id, pred_id) {
       if (_this.id == _successor.id && _this.id == _predecessor.id) {
         callback(_this);
       }
-
       
       // if the searched id is between this node and its successor, return the successor
       // - EDGE CASE: if this node is the last in ring (successor has lower id), and the
@@ -105,9 +104,12 @@ function peer(id, succ_id, pred_id) {
         _successor = peer;
       }
 
-      if (_predecessor.id == "null") {
+      // if the predecessor has left the network or is not known yet, accept the notify request
+      else if (_predecessor.id == "null") {
         _predecessor = peer;
       }
+
+      // new node has joined, or stabilization attemts to update pointers
       else if ((peer.id < _this.id && peer.id > _predecessor.id) ||
                (_predecessor.id > _this.id && peer.id > _predecessor.id)) {
         _predecessor = peer;
@@ -125,12 +127,13 @@ function peer(id, succ_id, pred_id) {
       httpRequest(_successor, '/peerRequests/find_predecessor', {id : _successor.id}, function(response){
         var successorsPredecessor = JSON.parse(response);
 
+        // if our successor has no predecessor, notify it of us
         if(JSON.stringify(successorsPredecessor) == JSON.stringify(nullPeer)){
           httpRequest(_successor, '/peerRequests/notify', _this , function(response){});
         }
-        else if ((successorsPredecessor.id < _successor.id && successorsPredecessor.id > _this.id) ||
-           (_this.id > _successor.id && successorsPredecessor.id > _this.id)||
-           _successor.id == _this.id) {
+
+        // if our successor's predecessor should actually be our new successor, update
+        else if ((successorsPredecessor.id < _successor.id && successorsPredecessor.id > _this.id)      || (_this.id > _successor.id && successorsPredecessor.id > _this.id)) {
           _successor = successorsPredecessor;
           httpRequest(_successor, '/peerRequests/notify', _this , function(response){});
         }
