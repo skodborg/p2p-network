@@ -22,7 +22,7 @@ router.post('/notify_predecessor', function(req, res, next){
 
   peer.notifyPredecessor();
 
-  res.send("OK");
+  res.send(JSON.stringify({status : "ok"}));
 });
 
 router.post('/notify_successor', function(req, res, next){
@@ -32,7 +32,7 @@ router.post('/notify_successor', function(req, res, next){
 
   peer.notifySuccessor(node);
 
-  res.send("OK");
+  res.send(JSON.stringify({status : "ok"}));
 });
 
 router.post('/find_predecessor', function(req, res, next) {
@@ -54,20 +54,7 @@ router.post('/notify', function(req, res, next){
   var newPeer = req.body;
 
   peer.notify(newPeer);
-  res.send({status : "ok"});
+  res.send(JSON.stringify({status : "ok"}));
 });
-
-
-
-router.get('/join', function(req, res, next) {
-  var peer = req.app.get('peer');
-
-  res.setHeader('Content-Type', 'application/json');
-  
-  res.send(JSON.stringify(peer.join(0)));
-});
-
-
-
 
 module.exports = router;
