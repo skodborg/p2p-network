@@ -145,26 +145,30 @@ function peer(port, succ_port, pred_port) {
       joined = true
     }
 
+
     function stabilize() {
+      var tempSuccessor = _successor
       if (!joined) {
         return
       }
-      if(_successor.id == "null" && _predecessor.id == "null"){
+      if(tempSuccessor.id == "null" && _predecessor.id == "null"){
         return;
       }
-      httpRequest(_successor, '/peerRequests/find_predecessor', {id : _successor.id}, function(response){
+      httpRequest(tempSuccessor, '/peerRequests/find_predecessor', {id : tempSuccessor.id}, function(response){
         var successorsPredecessor = JSON.parse(response);
 
         // if our successor has no predecessor, notify it of us
         if(JSON.stringify(successorsPredecessor) == JSON.stringify(nullPeer)){
-          httpRequest(_successor, '/peerRequests/notify', _this , function(response){});
+          httpRequest(tempSuccessor, '/peerRequests/notify', _this , function(response){});
         }
 
         // if our successor's predecessor should actually be our new successor, update
-        else if ((successorsPredecessor.id < _successor.id && successorsPredecessor.id > _this.id)
-                || (_this.id > _successor.id && successorsPredecessor.id > _this.id)) {
-          _successor = successorsPredecessor;
-          httpRequest(_successor, '/peerRequests/notify', _this , function(response){});
+        else if ((successorsPredecessor.id < tempSuccessor.id && successorsPredecessor.id > _this.id)
+                || (_this.id > tempSuccessor.id && successorsPredecessor.id > _this.id)) {
+          tempSuccessor = successorsPredecessor;
+          httpRequest(tempSuccessor, '/peerRequests/notify', _this , function(response){
+            _successor = tempSuccessor;
+          });
         }
       });
     }
