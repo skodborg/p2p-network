@@ -2,6 +2,9 @@ var http = require('http');
 const crypto = require('crypto');
 var nullPeer = { id : "null", ip : "null", port: "null" };
 
+// TODO: toggle hashing
+// TODO: let peers join a known peer upon creation by setting env variable
+
 function peer(port, succ_port, pred_port) {
     var _successor;
     var _predecessor;
