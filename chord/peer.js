@@ -3,13 +3,15 @@ const crypto = require('crypto');
 var nullPeer = { id : "null", ip : "null", port: "null" };
 
 // TODO: toggle hashing
-// TODO: let peers join a known peer upon creation by setting env variable
 
 function peer(port, succ_port, pred_port) {
     var _successor;
     var _predecessor;
 
     function hashId(id){
+      if (process.env.NOHASHING == 'true') {
+        return port
+      }
       return crypto.createHash('sha256').update(id).digest('hex');
     }
 
@@ -132,14 +134,21 @@ function peer(port, succ_port, pred_port) {
       }
     }
 
+    var joined = true
+
     function join(peer) {
+      joined = false
       httpRequest(peer, '/peerRequests/find_successor', {id : _this.id} , function(response){
         _successor = JSON.parse(response);
         httpRequest(_successor, '/peerRequests/notify', _this , function(response){});
       });
+      joined = true
     }
 
     function stabilize() {
+      if (!joined) {
+        return
+      }
       if(_successor.id == "null" && _predecessor.id == "null"){
         return;
       }
@@ -209,10 +218,10 @@ return {
 
     }
 
-
-      
 }
 
 
 module.exports = new peer(process.env.PORT, process.env.PORTSUCC, process.env.PORTPRED);
-
+if (process.env.JOIN == 'true') {
+  module.exports.join( {ip:'localhost', port:4000} )
+}
