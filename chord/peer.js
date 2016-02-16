@@ -2,8 +2,6 @@ var http = require('http');
 const crypto = require('crypto');
 var nullPeer = { id : "null", ip : "null", port: "null" };
 
-// TODO: toggle hashing
-
 function peer(port, succ_port, pred_port) {
     var _successor;
     var _predecessor;
@@ -80,9 +78,9 @@ function peer(port, succ_port, pred_port) {
         // searched id equals this node's id; return self
         callback(_this);
       } 
-      else if ((_this.id < id  && id <= _successor.id)  || 
-               (_successor.id < _this.id && id > _this.id)) {
-        // searched id is between this node and its successor; return successor
+      else if ((_this.id < id && id <= _successor.id)  || 
+               (_successor.id < _this.id && (id > _this.id || id < _successor.id))) {
+        // searched id is between this node and its successor; return successor¨
         callback(_successor);  
       }
       else {
@@ -103,8 +101,8 @@ function peer(port, succ_port, pred_port) {
       else if (id == _this.id) {
         callback(_predecessor);
       }
-      else if ((_this.id < id  && id <= _successor.id)  || 
-               (_successor.id < _this.id && id > _this.id)) {
+      else if ((_this.id < id && id <= _successor.id)  || 
+               (_successor.id < _this.id && (id > _this.id || id < _successor.id))) {
         callback(_this);
       }
       else {
@@ -129,7 +127,7 @@ function peer(port, succ_port, pred_port) {
 
       // new node has joined, or stabilization attemts to update pointers
       else if ((peer.id < _this.id && peer.id > _predecessor.id) ||
-               (_predecessor.id > _this.id && peer.id > _predecessor.id)) {
+               (_predecessor.id > _this.id && (peer.id > _predecessor.id || peer.id < _this.id))) {
         _predecessor = peer;
       }
     }
@@ -156,7 +154,6 @@ function peer(port, succ_port, pred_port) {
       }
       httpRequest(tempSuccessor, '/peerRequests/find_predecessor', {id : tempSuccessor.id}, function(response){
         var successorsPredecessor = JSON.parse(response);
-
         // if our successor has no predecessor, notify it of us
         if(JSON.stringify(successorsPredecessor) == JSON.stringify(nullPeer)){
           httpRequest(tempSuccessor, '/peerRequests/notify', _this , function(response){});
@@ -164,7 +161,8 @@ function peer(port, succ_port, pred_port) {
 
         // if our successor's predecessor should actually be our new successor, update
         else if ((successorsPredecessor.id < tempSuccessor.id && successorsPredecessor.id > _this.id)
-                || (_this.id > tempSuccessor.id && successorsPredecessor.id > _this.id)) {
+                || (_this.id > tempSuccessor.id && (successorsPredecessor.id > _this.id 
+                  || successorsPredecessor.id < tempSuccessor.id))) {
           tempSuccessor = successorsPredecessor;
           httpRequest(tempSuccessor, '/peerRequests/notify', _this , function(response){
             _successor = tempSuccessor;

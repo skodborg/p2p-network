@@ -11,6 +11,7 @@ router.post('/find_successor', function(req, res, next) {
   res.setHeader('Content-Type', 'application/json');
 
   peer.find_successor(id, function(json){
+    res.set("Connection", "close");
     res.send(JSON.stringify(json));
   });
 
@@ -29,7 +30,6 @@ router.post('/notify_successor', function(req, res, next){
   var peer = req.app.get('peer');
 
   var node = req.body;
-
   peer.notifySuccessor(node);
 
   res.send(JSON.stringify({status : "ok"}));
@@ -41,6 +41,7 @@ router.post('/find_predecessor', function(req, res, next) {
   var json = req.body;
   var id = json.id;
 
+  res.set("Connection", "close");
   res.setHeader('Content-Type', 'application/json');
 
   peer.find_predecessor(id, function(json){
