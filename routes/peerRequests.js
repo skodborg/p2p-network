@@ -4,7 +4,7 @@ var router = express.Router();
 
 
 
-router.post('/notify_predecessor', function(req, res, next){
+router.delete('/predecessor', function(req, res, next){
   var peer = req.app.get('peer');
 
   peer.notifyPredecessor();
@@ -14,7 +14,7 @@ router.post('/notify_predecessor', function(req, res, next){
   res.send(JSON.stringify({status : "ok"}));
 });
 
-router.post('/notify_successor', function(req, res, next){
+router.put('/successor', function(req, res, next){
   var peer = req.app.get('peer');
 
   var node = req.body;

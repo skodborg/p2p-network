@@ -62,8 +62,8 @@ function peer(port, succ_port, pred_port) {
     }
 
     function leave(){
-      httpRequest(_successor, '/peerRequests/notify_predecessor', {} , function(response){
-            httpRequest(_predecessor, '/peerRequests/notify_successor', _successor , function(response){
+      deleteRequest(_successor, '/peerRequests/predecessor' , function(response){
+            putRequest(_predecessor, '/peerRequests/successor', _successor , function(response){
                   _successor = nullPeer;
                   _predecessor = nullPeer;
             });      
@@ -91,7 +91,7 @@ function peer(port, succ_port, pred_port) {
       else {
         // searched id is not this node, nor its immediate neighbourhood;
         // pass request around the ring through our successor
-        httpGetRequest(_successor, '/peerRequests/find_successor/'+id, function(response){
+        getRequest(_successor, '/peerRequests/find_successor/'+id, function(response){
               callback(JSON.parse(response));
         });
 
@@ -112,7 +112,7 @@ function peer(port, succ_port, pred_port) {
         callback(_this);
       }
       else {
-        httpGetRequest(_successor, '/peerRequests/find_predecessor/'+id, function(response){
+        getRequest(_successor, '/peerRequests/find_predecessor/'+id, function(response){
               callback(JSON.parse(response));
         });
 
@@ -142,9 +142,9 @@ function peer(port, succ_port, pred_port) {
 
     function join(peer) {
       joined = false;
-      httpGetRequest(peer, '/peerRequests/find_successor/'+_this.id, function(response){
+      getRequest(peer, '/peerRequests/find_successor/'+_this.id, function(response){
               _successor = JSON.parse(response);
-              httpRequest(_successor, '/peerRequests/notify', _this , function(response){});
+              postRequest(_successor, '/peerRequests/notify', _this , function(response){});
       });
 
       joined = true
@@ -159,11 +159,11 @@ function peer(port, succ_port, pred_port) {
       if(tempSuccessor.id == "null" && _predecessor.id == "null"){
         return;
       }
-      httpGetRequest(tempSuccessor, '/peerRequests/find_predecessor/'+tempSuccessor.id, function(response){
+      getRequest(tempSuccessor, '/peerRequests/find_predecessor/'+tempSuccessor.id, function(response){
         var successorsPredecessor = JSON.parse(response);
                 // if our successor has no predecessor, notify it of us
         if(JSON.stringify(successorsPredecessor) == JSON.stringify(nullPeer)){
-          httpRequest(tempSuccessor, '/peerRequests/notify', _this , function(response){});
+          postRequest(tempSuccessor, '/peerRequests/notify', _this , function(response){});
         }
 
         // if our successor's predecessor should actually be our new successor, update
@@ -171,7 +171,7 @@ function peer(port, succ_port, pred_port) {
                 || (_this.id > tempSuccessor.id && (successorsPredecessor.id > _this.id 
                   || successorsPredecessor.id < tempSuccessor.id))) {
           tempSuccessor = successorsPredecessor;
-          httpRequest(tempSuccessor, '/peerRequests/notify', _this , function(response){
+          postRequest(tempSuccessor, '/peerRequests/notify', _this , function(response){
             _successor = tempSuccessor;
           });
         }
@@ -181,7 +181,7 @@ function peer(port, succ_port, pred_port) {
     
 
 
-    function httpRequest(peer, link, content, callback) {
+    function postRequest(peer, link, content, callback) {
       var post_options = {
             host : peer.ip,
             port: peer.port,
@@ -208,7 +208,7 @@ function peer(port, succ_port, pred_port) {
       post_req.end();
     }
 
-    function httpGetRequest(peer, link, callback){
+    function getRequest(peer, link, callback){
        var get_options = {
           host : peer.ip,
           port: peer.port,
@@ -226,6 +226,62 @@ function peer(port, succ_port, pred_port) {
         });
       });
     }
+
+    function deleteRequest(peer, link, callback) {
+      var post_options = {
+            host : peer.ip,
+            port: peer.port,
+            path: link,
+            method: 'DELETE',
+            headers: {
+                'content-type': 'application/json',
+            }
+      };
+
+      // perform request and handle response
+      var post_req = http.request(post_options, function(res) {
+          var response = "";
+          res.on('data', function(chunk) {
+            response += chunk;
+          });
+
+          res.on('end', function() {
+            callback(response);
+          });
+      });
+
+      post_req.write("");
+      post_req.end();
+    }
+
+    function putRequest(peer, link, content, callback) {
+      var post_options = {
+            host : peer.ip,
+            port: peer.port,
+            path: link,
+            method: 'PUT',
+            headers: {
+                'content-type': 'application/json',
+            }
+      };
+
+      // perform request and handle response
+      var post_req = http.request(post_options, function(res) {
+          var response = "";
+          res.on('data', function(chunk) {
+            response += chunk;
+          });
+
+          res.on('end', function() {
+            callback(response);
+          });
+      });
+
+      post_req.write(JSON.stringify( content ));
+      post_req.end();
+    }
+
+
 
     if(process.env.STABILIZE == 'ON'){
       setInterval(stabilize, 1000);
