@@ -1,5 +1,6 @@
 var http = require('http');
 const crypto = require('crypto');
+//require('longjohn');
 var nullPeer = { id : "null", ip : "null", port: "null" };
 
 function peer(port, succ_port, pred_port) {
@@ -10,7 +11,11 @@ function peer(port, succ_port, pred_port) {
       if (process.env.NOHASHING == 'true') {
         return port
       }
-      return crypto.createHash('sha256').update(id).digest('hex');
+
+      var hashString = crypto.createHash('sha256').update(id).digest('hex');
+      hashString = hashString.slice(0, 5);
+
+      return parseInt(hashString, 16);
     }
 
     function createPeer(ip, port){
@@ -86,9 +91,10 @@ function peer(port, succ_port, pred_port) {
       else {
         // searched id is not this node, nor its immediate neighbourhood;
         // pass request around the ring through our successor
-        httpRequest(_successor, '/peerRequests/find_successor', {id : id} , function(response){
+        httpGetRequest(_successor, '/peerRequests/find_successor/'+id, function(response){
               callback(JSON.parse(response));
         });
+
         
       }
     }
@@ -106,10 +112,10 @@ function peer(port, succ_port, pred_port) {
         callback(_this);
       }
       else {
-
-        httpRequest(_successor, '/peerRequests/find_predecessor', {id : id} , function(response){
+        httpGetRequest(_successor, '/peerRequests/find_predecessor/'+id, function(response){
               callback(JSON.parse(response));
         });
+
       }
     }
 
@@ -135,11 +141,12 @@ function peer(port, succ_port, pred_port) {
     var joined = true
 
     function join(peer) {
-      joined = false
-      httpRequest(peer, '/peerRequests/find_successor', {id : _this.id} , function(response){
-        _successor = JSON.parse(response);
-        httpRequest(_successor, '/peerRequests/notify', _this , function(response){});
+      joined = false;
+      httpGetRequest(peer, '/peerRequests/find_successor/'+_this.id, function(response){
+              _successor = JSON.parse(response);
+              httpRequest(_successor, '/peerRequests/notify', _this , function(response){});
       });
+
       joined = true
     }
 
@@ -152,9 +159,9 @@ function peer(port, succ_port, pred_port) {
       if(tempSuccessor.id == "null" && _predecessor.id == "null"){
         return;
       }
-      httpRequest(tempSuccessor, '/peerRequests/find_predecessor', {id : tempSuccessor.id}, function(response){
+      httpGetRequest(tempSuccessor, '/peerRequests/find_predecessor/'+tempSuccessor.id, function(response){
         var successorsPredecessor = JSON.parse(response);
-        // if our successor has no predecessor, notify it of us
+                // if our successor has no predecessor, notify it of us
         if(JSON.stringify(successorsPredecessor) == JSON.stringify(nullPeer)){
           httpRequest(tempSuccessor, '/peerRequests/notify', _this , function(response){});
         }
@@ -200,6 +207,26 @@ function peer(port, succ_port, pred_port) {
       post_req.write(JSON.stringify( content ));
       post_req.end();
     }
+
+    function httpGetRequest(peer, link, callback){
+       var get_options = {
+          host : peer.ip,
+          port: peer.port,
+          path: link,
+          agent: false
+      };
+      http.get(get_options, function(res) {
+        var response = "";
+        res.on('data', function(chunk) {
+          response += chunk;
+        });
+
+        res.on('end', function() {
+          callback(response);
+        });
+      });
+    }
+
     if(process.env.STABILIZE == 'ON'){
       setInterval(stabilize, 1000);
     }
