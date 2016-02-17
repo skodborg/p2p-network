@@ -1,30 +1,47 @@
 extends layout
 
+
 block content
-  h1= thisId
-  p Predecessor id: #{predecessor.id}. Link: 
-    a(href="http://#{predecessor.ip}:#{predecessor.port}") #{predecessor.ip}:#{predecessor.port}
-  p Successor id: #{successor.id}. Link: 
-    a(href="http://#{successor.ip}:#{successor.port}") #{successor.ip}:#{successor.port}
-  form(action="join", method="POST")
-    div.input
-        p ip:
+
+  h1 #{thisPeer.id}
+  .peerInformation(id="pred")
+    .id #{pred.id}
+    .ip #{pred.ip}
+    .port #{pred.port}
+    .link 
+      a(href="http://#{pred.ip}:#{pred.port}") Click here
+
+  .peerInformation(id="succ")
+    .id #{succ.id}
+    .ip #{succ.ip}
+    .port #{succ.port}
+    .link 
+      a(href="http://#{succ.ip}:#{succ.port}") Click here
+
+  .joinForm
+    form(id="join")
+      .ipInput
+        p Ip:
         input(type="text", name="ip", value="localhost")
-    div.input
-        p port:
-        input(type="text", name="port", value="2000")
-    div.actions
-        input(type="submit", value="join peer")
-  form(action="stabilize", method="POST")
-    div.input
-        input(type="submit", value="STABILIZE")
-  form(action="findID", method="POST")
-    div.input
-        p search for id:
-        input(type="text", name="id")
-    div.input
+      .portInput
+        p Port:
+        input(type="text", name="port", value="4000")
+      .action
+        input(type="submit", value="Join Peer")
+
+  .stabilize
+      input(type="submit" value="stabilize" id="stabilize")
+
+  .findID
+    form(id="findID")
+      .inputId
+        p Search for id:
+        input(name="id")
+      .action
         input(type="submit", value="SEARCH")
-  div.leave
-    a(href="leave") Leave Chord Ring
-  div.searchResult
-    a(href="http://#{searchResult.ip}:#{searchResult.port}") #{searchResult.id}
+    .findIDResult
+
+  .leave
+      input(type="submit" value="leave ring" id="leave")
+
+

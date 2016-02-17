@@ -8,11 +8,16 @@ router.delete('/predecessor', function(req, res, next){
   var peer = req.app.get('peer');
 
   peer.notifyPredecessor();
-
-
-
   res.send(JSON.stringify({status : "ok"}));
 });
+
+router.get('/predecessor', function(req, res, next){
+  var peer = req.app.get('peer');
+
+  
+  res.send(JSON.stringify(peer.get_predecessor()));
+});
+
 
 router.put('/successor', function(req, res, next){
   var peer = req.app.get('peer');
@@ -21,6 +26,13 @@ router.put('/successor', function(req, res, next){
   peer.notifySuccessor(node);
 
   res.send(JSON.stringify({status : "ok"}));
+});
+
+router.get('/successor', function(req, res, next){
+  var peer = req.app.get('peer');
+
+  
+  res.send(JSON.stringify(peer.get_successor()));
 });
 
 router.get('/find_successor/:id*', function(req, res, next) {
@@ -59,5 +71,28 @@ router.post('/notify', function(req, res, next){
   peer.notify(newPeer);
   res.send(JSON.stringify({status : "ok"}));
 });
+
+router.post('/join', function(req, res, next){
+  var peer = req.app.get('peer');
+
+  var newPeer = req.body;
+  peer.join(req.body);
+  res.send(JSON.stringify({status : "ok"}));
+});
+
+router.post('/leave', function(req, res, next) {
+  var peer = req.app.get('peer');
+
+  peer.leave();
+  res.send(JSON.stringify({status : "ok"}));
+});
+
+router.post('/stabilize', function(req, res, next) {
+  var peer = req.app.get('peer');
+
+  peer.stabilize();
+  res.send(JSON.stringify({status: "ok"}));
+});
+
 
 module.exports = router;
