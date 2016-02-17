@@ -182,30 +182,7 @@ function peer(port, succ_port, pred_port) {
 
 
     function postRequest(peer, link, content, callback) {
-      var post_options = {
-            host : peer.ip,
-            port: peer.port,
-            path: link,
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-            }
-      };
-
-      // perform request and handle response
-      var post_req = http.request(post_options, function(res) {
-          var response = "";
-          res.on('data', function(chunk) {
-            response += chunk;
-          });
-
-          res.on('end', function() {
-            callback(response);
-          });
-      });
-
-      post_req.write(JSON.stringify( content ));
-      post_req.end();
+      httpRequest(peer, link, content, callback, "POST");
     }
 
     function getRequest(peer, link, callback){
@@ -228,38 +205,20 @@ function peer(port, succ_port, pred_port) {
     }
 
     function deleteRequest(peer, link, callback) {
-      var post_options = {
-            host : peer.ip,
-            port: peer.port,
-            path: link,
-            method: 'DELETE',
-            headers: {
-                'content-type': 'application/json',
-            }
-      };
-
-      // perform request and handle response
-      var post_req = http.request(post_options, function(res) {
-          var response = "";
-          res.on('data', function(chunk) {
-            response += chunk;
-          });
-
-          res.on('end', function() {
-            callback(response);
-          });
-      });
-
-      post_req.write("");
-      post_req.end();
+      httpRequest(peer, link, "", callback, "DELETE");
     }
 
     function putRequest(peer, link, content, callback) {
+      httpRequest(peer, link, content, callback, "PUT");
+    }
+
+
+    function httpRequest(peer, link, content, callback, method) {
       var post_options = {
             host : peer.ip,
             port: peer.port,
             path: link,
-            method: 'PUT',
+            method: method,
             headers: {
                 'content-type': 'application/json',
             }
@@ -280,7 +239,6 @@ function peer(port, succ_port, pred_port) {
       post_req.write(JSON.stringify( content ));
       post_req.end();
     }
-
 
 
     if(process.env.STABILIZE == 'ON'){
