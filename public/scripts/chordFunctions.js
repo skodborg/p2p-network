@@ -36,24 +36,24 @@ var testData = "teest";
 function updatePeerData(){
 	$.get( "peerRequests/successor", function( newData ) { 
 		newData = JSON.parse(newData);
-		$("#pred .ip").html(newData.ip);
+		$("#succ .ip").html(newData.ip);
 
-		$("#pred .id").html(newData.id);
+		$("#succ .id").html(newData.id);
 
-		$("#pred .port").html(newData.port);
+		$("#succ .port").html(newData.port);
 
-		$("#pred .link").html(createLink(newData));
+		$("#succ .link").html(createLink(newData));
 	});
 
 	$.get( "peerRequests/predecessor", function( newData ) { 
 		newData = JSON.parse(newData);
-		$("#succ .ip").text(newData.ip);
+		$("#pred .ip").text(newData.ip);
 
-		$("#succ .id").text(newData.id);
+		$("#pred .id").text(newData.id);
 
-		$("#succ .port").text(newData.port);
+		$("#pred .port").text(newData.port);
 
-		$("#succ .link").html(createLink(newData));
+		$("#pred .link").html(createLink(newData));
 	});
 
 	$.get("peerRequests/fingertable", function( newData ){
@@ -62,7 +62,7 @@ function updatePeerData(){
 
 		var table = "<table>";
 		table+= "<td>";
-		table+= "ID";
+		table+= "FINGERID";
 		table+="</td>";
 		table+= "<td>";
 		table+= "IP";
@@ -71,25 +71,27 @@ function updatePeerData(){
 		table+= "PORT";
 		table+="</td>";
 		table+= "<td>";
-		table+= "HASH";
+		table+= "ID";
 		table+="</td>";
 
 
 		for(i = 0; i < newData.length; i++){
-			table+= "<tr>";
-			table+="<td>";
-			table+= newData[i].id;
-			table+= "</td>";
-			table+="<td>";
-			table+= newData[i].ip;
-			table+= "</td>";
-			table+="<td>";
-			table+= newData[i].port;
-			table+= "</td>";
-			table+="<td>";
-			table+= newData[i].hash;
-			table+= "</td>";
-			table+="</tr>";
+			if(typeof(newData[i]) !== 'undefined' && newData[i] != null){
+				table+= "<tr>";
+				table+="<td>";
+				table+= newData[i].fingerID;
+				table+= "</td>";
+				table+="<td>";
+				table+= newData[i].ip;
+				table+= "</td>";
+				table+="<td>";
+				table+= newData[i].port;
+				table+= "</td>";
+				table+="<td>";
+				table+= newData[i].id;
+				table+= "</td>";
+				table+="</tr>";
+			}
 		}
 
 		table += "</table>";

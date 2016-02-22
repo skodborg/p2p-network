@@ -1,12 +1,14 @@
 var http = require('http');
 const crypto = require('crypto');
+var math = require('mathjs');
 //require('longjohn');
 var nullPeer = { id : "null", ip : "null", port: "null" };
 
 function peer(port, succ_port, pred_port) {
   var _successor;
   var _predecessor;
-  var _fingerTable;
+  var _fingerTable = [];
+  var _hashLength = 5;
 
   function hashId(id){
     if (process.env.NOHASHING == 'true') {
@@ -14,7 +16,7 @@ function peer(port, succ_port, pred_port) {
     }
 
     var hashString = crypto.createHash('sha256').update(id).digest('hex');
-    hashString = hashString.slice(0, 5);
+    hashString = hashString.slice(0, _hashLength);
 
     return parseInt(hashString, 16);
   }
@@ -23,11 +25,14 @@ function peer(port, succ_port, pred_port) {
     return {id : hashId(ip + port), ip : ip, port: port};
   }
 
+  var _this = createPeer('localhost', port);
+
   if (succ_port == "null") {
-    _successor = nullPeer;
+    setSuccessor(nullPeer);
   }
   else {
-    _successor = createPeer('localhost', succ_port);
+    setSuccessor(createPeer('localhost', succ_port));
+    initFingertable();
   }
 
 
@@ -39,7 +44,8 @@ function peer(port, succ_port, pred_port) {
   }
 
   // NOTE: id equals port for now
-  var _this = createPeer('localhost', port);
+  
+
 
 
   function get_this(){
@@ -59,13 +65,13 @@ function peer(port, succ_port, pred_port) {
   }
 
   function notifySuccessor(node){
-    _successor = node;
+    setSuccessor(node);
   }
 
   function leave(){
     deleteRequest(_successor, '/peerRequests/predecessor' , function(response){
           putRequest(_predecessor, '/peerRequests/successor', _successor , function(response){
-                _successor = nullPeer;
+                setSuccessor(nullPeer);
                 _predecessor = nullPeer;
           });      
     });
@@ -121,10 +127,11 @@ function peer(port, succ_port, pred_port) {
   }
 
   function notify(peer) {
+    console.log("NOTIFY : " + JSON.stringify(peer));
     // base case: only one node in ring, the peer is now our new successor AND predecessor.
     if (_this.id == _successor.id && _this.id == _predecessor.id) {
       _predecessor = peer;
-      _successor = peer;
+      setSuccessor(peer);
     }
 
     // if the predecessor has left the network or is not known yet, accept the notify request
@@ -144,8 +151,11 @@ function peer(port, succ_port, pred_port) {
   function join(peer) {
     joined = false;
     getRequest(peer, '/peerRequests/find_successor/'+_this.id, function(response){
-            _successor = JSON.parse(response);
-            postRequest(_successor, '/peerRequests/notify', _this , function(response){});
+            setSuccessor(JSON.parse(response));
+            initFingertable();
+            postRequest(_successor, '/peerRequests/notify', _this , function(response){
+
+            });
     });
 
     joined = true
@@ -162,18 +172,20 @@ function peer(port, succ_port, pred_port) {
     }
     getRequest(tempSuccessor, '/peerRequests/find_predecessor/'+tempSuccessor.id, function(response){
       var successorsPredecessor = JSON.parse(response);
+
               // if our successor has no predecessor, notify it of us
       if(JSON.stringify(successorsPredecessor) == JSON.stringify(nullPeer)){
+  
         postRequest(tempSuccessor, '/peerRequests/notify', _this , function(response){});
       }
 
       // if our successor's predecessor should actually be our new successor, update
       else if ((successorsPredecessor.id < tempSuccessor.id && successorsPredecessor.id > _this.id)
               || (_this.id > tempSuccessor.id && (successorsPredecessor.id > _this.id 
-                || successorsPredecessor.id < tempSuccessor.id))) {
+              || successorsPredecessor.id < tempSuccessor.id))) {
         tempSuccessor = successorsPredecessor;
         postRequest(tempSuccessor, '/peerRequests/notify', _this , function(response){
-          _successor = tempSuccessor;
+          setSuccessor(tempSuccessor);
         });
       }
     });
@@ -213,13 +225,88 @@ function peer(port, succ_port, pred_port) {
     httpRequest(peer, link, content, callback, "PUT");
   }
 
+  function setSuccessor(successor){
+    _successor = successor;
+    var tempSuccessor = JSON.parse(JSON.stringify(successor));
+
+    tempSuccessor.fingerID = fingerStart(1);
+    _fingerTable[1] = tempSuccessor;
+
+  }
+
+  /////////////////////////
+  ///// FINGERTABLES //////
+  /////////////////////////
+
   function getFingertable(){
     return _fingerTable;
   }
 
-  function initFingertable(){
-    _fingerTable = {fingerTable : [{id : "id", port : "port", ip : "ip", hash : "hash"}]};
+  function initFingertable(i){
+    if(typeof i === 'undefined'){
+      i = 1;
+    }
+    if(i >= _hashLength*4){
+      updateOthers();
+      return;
+    }
+    var fingerID = fingerStart(i+1);
+    if(fingerID >= _this.id && fingerID < _fingerTable[i].id){
+      _fingerTable[i+1] = JSON.parse(JSON.stringify(_fingerTable[i]));
+      _fingerTable[i+1].fingerID = fingerID;
+      initFingertable(i+1);
+    }else{
+      getRequest(_successor, '/peerRequests/find_successor/'+fingerID, function(response){
+          returnedSuccessor = JSON.parse(response);
+
+          returnedSuccessor.fingerID = fingerID;
+
+          _fingerTable[i+1] = returnedSuccessor;
+          initFingertable(i+1);
+      });
+      
+    }
   }
+
+  function updateOthers(i){
+      if(typeof i === 'undefined'){
+      i = 1;
+      }
+      if(i > _hashLength*4){
+        return;
+      }
+    
+      //var pred_search_id = math.mod((_this.id - Math.pow(2, i-1)), Math.pow(2, _hashLength*4));
+      var pred_search_id = _this.id - Math.pow(2, i-1);
+      getRequest(_successor, '/peerRequests/find_predecessor/'+pred_search_id, function(response){
+        returnedPredecessor = JSON.parse(response);
+        postRequest(returnedPredecessor, '/peerRequests/updateFingerTable', {peer : _this, i : i}, function(response){});
+        updateOthers(i+1); 
+      });
+    
+  }
+
+  function updateFingerTable(peer, i){
+
+
+    if(peer.id >= _this.id && peer.id < _fingerTable[i].id){
+
+      peer.fingerID = _fingerTable[i].fingerID;
+      _fingerTable[i] = peer;
+      postRequest(_predecessor, '/peerRequests/updateFingerTable', {peer : peer, i : i}, function(response){
+      });
+    }
+  }
+
+  function fingerStart(k){
+
+    return (_this.id + math.mod(Math.pow(2, k-1),  Math.pow(2, _hashLength*4)));
+  }
+
+  /////////////////////////
+  //// FINGERTABLES END ///
+  /////////////////////////
+
 
   function httpRequest(peer, link, content, callback, method) {
     var post_options = {
@@ -252,7 +339,6 @@ function peer(port, succ_port, pred_port) {
   if(process.env.STABILIZE == 'ON'){
     setInterval(stabilize, 1000);
   }
-  initFingertable()
   return {
       find_successor : find_successor,
       find_predecessor : find_predecessor,
@@ -265,7 +351,8 @@ function peer(port, succ_port, pred_port) {
       notifySuccessor : notifySuccessor,
       leave : leave,
       get_this : get_this,
-      getFingertable : getFingertable
+      getFingertable : getFingertable,
+      updateFingerTable : updateFingerTable
 
     }
 

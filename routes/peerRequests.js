@@ -52,7 +52,7 @@ router.get('/find_successor/:id*', function(req, res, next) {
 router.get('/fingertable', function(req, res, next) {
   var peer = req.app.get('peer');
   res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify(peer.getFingertable()));
+  res.send(JSON.stringify({fingerTable : peer.getFingertable()}));
 });
 
 router.get('/find_predecessor/:id*', function(req, res, next) {
@@ -95,6 +95,14 @@ router.post('/stabilize', function(req, res, next) {
   var peer = req.app.get('peer');
 
   peer.stabilize();
+  res.send(JSON.stringify({status: "ok"}));
+});
+
+router.post('/updateFingerTable', function(req, res, next) {
+  var peer = req.app.get('peer');
+  var body = req.body;
+
+  peer.updateFingerTable(body.peer, body.i);
   res.send(JSON.stringify({status: "ok"}));
 });
 

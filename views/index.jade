@@ -5,6 +5,7 @@ block content
 
   h1 #{thisPeer.id}
   .peerInformation(id="pred")
+    h2 Predecessor
     .id #{pred.id}
     .ip #{pred.ip}
     .port #{pred.port}
@@ -12,6 +13,7 @@ block content
       a(href="http://#{pred.ip}:#{pred.port}") Click here
 
   .peerInformation(id="succ")
+    h2 successor
     .id #{succ.id}
     .ip #{succ.ip}
     .port #{succ.port}
@@ -47,15 +49,17 @@ block content
   .fingerTable
     table
       tr
-        td ID
+        td FINGERID
         td IP
         td PORT
-        td HASH
+        td ID
       for entry in fingerTable
-        tr
-          td #{entry.id}
-          td #{entry.ip}
-          td #{entry.port}
-          td #{entry.hash}
+        - if(typeof(entry) !== 'undefined'){
+          tr
+            td #{entry.fingerID}
+            td #{entry.ip}
+            td #{entry.port}
+            td #{entry.id}
+        - }
 
 
