@@ -47,8 +47,12 @@ router.get('/find_successor/:id*', function(req, res, next) {
     res.set("Connection", "close");
     res.send(JSON.stringify(json));
   });
+});
 
-
+router.get('/fingertable', function(req, res, next) {
+  var peer = req.app.get('peer');
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify(peer.getFingertable()));
 });
 
 router.get('/find_predecessor/:id*', function(req, res, next) {

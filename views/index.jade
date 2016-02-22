@@ -42,6 +42,20 @@ block content
     .findIDResult
 
   .leave
-      input(type="submit" value="leave ring" id="leave")
+    input(type="submit" value="leave ring" id="leave")
+
+  .fingerTable
+    table
+      tr
+        td ID
+        td IP
+        td PORT
+        td HASH
+      for entry in fingerTable
+        tr
+          td #{entry.id}
+          td #{entry.ip}
+          td #{entry.port}
+          td #{entry.hash}
 
 
