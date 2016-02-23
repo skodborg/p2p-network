@@ -14,6 +14,10 @@ function peer(port, succ_port, pred_port) {
       return port
     }
 
+    if(typeof process.env.HASH !== 'undefined'){
+      return parseInt(process.env.HASH);
+    }
+
     var hashString = crypto.createHash('sha256').update(id).digest('hex');
     hashString = hashString.slice(0, _hashLength);
 
@@ -264,7 +268,6 @@ function peer(port, succ_port, pred_port) {
           _fingerTable[i+1] = returnedSuccessor;
           initFingertable(i+1);
       });
-      
     }
   }
 
@@ -277,25 +280,68 @@ function peer(port, succ_port, pred_port) {
       }
     
       //var pred_search_id = math.mod((_this.id - Math.pow(2, i-1)), Math.pow(2, _hashLength*4));
-      var pred_search_id = (_this.id - Math.pow(2, i-1)).mod(Math.pow(2, _hashLength));
-
+      var pred_search_id = (_this.id - Math.pow(2, i-1)).mod(Math.pow(2, _hashLength*4));
       getRequest(_successor, '/peerRequests/find_predecessor/'+pred_search_id, function(response){
         returnedPredecessor = JSON.parse(response);
+        console.log("FOUND predecessor = " + returnedPredecessor.id + " LOOKING FOR id = " + pred_search_id)
         postRequest(returnedPredecessor, '/peerRequests/updateFingerTable', {peer : _this, i : i}, function(response){});
         updateOthers(i+1); 
       });
     
   }
 
+
+  // TODO: FIX OFF-BY-ONE IN ASSIGNMENTS
+  function is_between(this_id, between_peer, ith_finger, i) {
+    console.log("this_id: " + this_id)
+    console.log("between_peer: " + between_peer)
+    console.log("ith_finger: " + ith_finger)
+    console.log("i: " + i)
+    console.log("fingerStart(i): " + fingerStart(i))
+    
+    if (this_id <= between_peer && between_peer < ith_finger) {
+      console.log("TRUE")
+      return true;
+    }
+
+    else if (ith_finger < this_id && between_peer < ith_finger) {
+      console.log("TRUE")
+      return true;
+    }
+
+    else if (ith_finger < this_id && between_peer > this_id) {
+      console.log("TRUE")
+      return true;
+    }
+    else if(ith_finger == this_id){
+      console.log("ith finger value: " + fingerStart(i))
+      if(between_peer > this_id){
+
+        if(fingerStart(i) <= between_peer){
+          console.log("TRUE")
+          return true;
+        }
+
+      }
+
+      if(between_peer < this_id){
+          if(fingerStart(i) > this_id || fingerStart(i) <= between_peer){
+            console.log("TRUE")
+            return true;
+          }
+      }
+    }
+    console.log("FALSE")
+    
+    return false;
+  }
+
   function updateFingerTable(peer, i){
+
     var hashMaxLength = (_hashLength * 4)-1;
-    var fingerTableEntry = _fingerTable[i].id;
+    var ith_finger_node = _fingerTable[i].id;
 
-    if((peer.id >= _this.id && peer.id < fingerTableEntry)
-      || (fingerTableEntry < _this.id && 
-          ((hashMaxLength >= peer.id && peer.id >= _this.id)
-            ||  (  peer.id >= 0 && peer.id < fingerTableEntry)))){
-
+    if(is_between(_this.id, peer.id, ith_finger_node, i)){
       peer.fingerID = _fingerTable[i].fingerID;
       _fingerTable[i] = peer;
       postRequest(_predecessor, '/peerRequests/updateFingerTable', {peer : peer, i : i}, function(response){
@@ -304,7 +350,6 @@ function peer(port, succ_port, pred_port) {
   }
 
   function fingerStart(k){
-
     return (_this.id + Math.pow(2, k-1)) %  Math.pow(2, _hashLength*4);
   }
 
