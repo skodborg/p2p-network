@@ -100,7 +100,7 @@ router.post('/stabilize', function(req, res, next) {
 
 router.post('/fixfingers', function(req, res, next) {
   var peer = req.app.get('peer');
-  console.log("FIXING FINGERS")
+  
   peer.fix_fingers();
   res.send(JSON.stringify({status: "ok"}));
 });
