@@ -1,14 +1,13 @@
 var http = require('http');
 const crypto = require('crypto');
-var math = require('mathjs');
-//require('longjohn');
+
 var nullPeer = { id : "null", ip : "null", port: "null" };
 
 function peer(port, succ_port, pred_port) {
   var _successor;
   var _predecessor;
   var _fingerTable = [];
-  var _hashLength = 5;
+  var _hashLength = 1;
 
   function hashId(id){
     if (process.env.NOHASHING == 'true') {
@@ -300,7 +299,7 @@ function peer(port, succ_port, pred_port) {
 
   function fingerStart(k){
 
-    return (_this.id + math.mod(Math.pow(2, k-1),  Math.pow(2, _hashLength*4)));
+    return (_this.id + Math.pow(2, k-1)) %  Math.pow(2, _hashLength*4);
   }
 
   /////////////////////////
