@@ -10,8 +10,11 @@ function prepPage(){
 	});
 
 	$("#stabilize").click(function(){
-
 		$.post( "peerRequests/stabilize", function( data ) {});
+	});
+
+	$("#fixfingers").click(function(){
+		$.post( "peerRequests/fixfingers", function( data ) {});
 	});
 
 	$( "#findID" ).submit(function( event ) {

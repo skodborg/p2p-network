@@ -42,10 +42,6 @@ function peer(port, succ_port, pred_port) {
     _predecessor = createPeer('localhost', pred_port);
   }
 
-  // NOTE: id equals port for now
-  
-
-
 
   function get_this(){
     return _this;
@@ -100,8 +96,6 @@ function peer(port, succ_port, pred_port) {
       getRequest(_successor, '/peerRequests/find_successor/'+id, function(response){
             callback(JSON.parse(response));
       });
-
-      
     }
   }
 
@@ -121,12 +115,10 @@ function peer(port, succ_port, pred_port) {
       getRequest(_successor, '/peerRequests/find_predecessor/'+id, function(response){
             callback(JSON.parse(response));
       });
-
     }
   }
 
   function notify(peer) {
-    console.log("NOTIFY : " + JSON.stringify(peer));
     // base case: only one node in ring, the peer is now our new successor AND predecessor.
     if (_this.id == _successor.id && _this.id == _predecessor.id) {
       _predecessor = peer;
@@ -171,7 +163,7 @@ function peer(port, succ_port, pred_port) {
     getRequest(tempSuccessor, '/peerRequests/find_predecessor/'+tempSuccessor.id, function(response){
       var successorsPredecessor = JSON.parse(response);
 
-              // if our successor has no predecessor, notify it of us
+      // if our successor has no predecessor, notify it of us
       if(JSON.stringify(successorsPredecessor) == JSON.stringify(nullPeer)){
   
         postRequest(tempSuccessor, '/peerRequests/notify', _this , function(response){});
@@ -188,9 +180,19 @@ function peer(port, succ_port, pred_port) {
       }
     });
   }
-  
-  
 
+  function fix_fingers() {
+    // find the successor peer of the key corresponding to the ith finger table
+    // entry and update the table with this peer
+    var i = Math.floor(Math.random() * (_fingerTable.length - 1)) + 1;
+    ith_finger_start = fingerStart(i);
+
+    getRequest(_successor, '/peerRequests/find_successor/'+ith_finger_start, function(response){
+      fingerTableEntry = JSON.parse(response);
+      fingerTableEntry.fingerID = fingerStart(i);
+      _fingerTable[i] = fingerTableEntry;
+    });
+  }
 
   function postRequest(peer, link, content, callback) {
     httpRequest(peer, link, content, callback, "POST");
@@ -341,6 +343,7 @@ function peer(port, succ_port, pred_port) {
 
   if(process.env.STABILIZE == 'ON'){
     setInterval(stabilize, 1000);
+    // setInterval(fix_fingers(), 1000);
   }
   return {
       find_successor : find_successor,
@@ -355,7 +358,8 @@ function peer(port, succ_port, pred_port) {
       leave : leave,
       get_this : get_this,
       getFingertable : getFingertable,
-      updateFingerTable : updateFingerTable
+      updateFingerTable : updateFingerTable,
+      fix_fingers : fix_fingers
 
     }
 
