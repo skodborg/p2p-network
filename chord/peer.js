@@ -150,10 +150,9 @@ function peer(port, succ_port, pred_port) {
   function join(peer) {
     joined = false;
     getRequest(peer, '/peerRequests/find_successor/'+_this.id, function(response){
-            setSuccessor(JSON.parse(response));
-            initFingertable();
+            setSuccessor(JSON.parse(response));     
             postRequest(_successor, '/peerRequests/notify', _this , function(response){
-
+              initFingertable();
             });
     });
 
@@ -276,7 +275,8 @@ function peer(port, succ_port, pred_port) {
       }
     
       //var pred_search_id = math.mod((_this.id - Math.pow(2, i-1)), Math.pow(2, _hashLength*4));
-      var pred_search_id = _this.id - Math.pow(2, i-1);
+      var pred_search_id = (_this.id - Math.pow(2, i-1)).mod(Math.pow(2, _hashLength));
+
       getRequest(_successor, '/peerRequests/find_predecessor/'+pred_search_id, function(response){
         returnedPredecessor = JSON.parse(response);
         postRequest(returnedPredecessor, '/peerRequests/updateFingerTable', {peer : _this, i : i}, function(response){});
@@ -286,9 +286,13 @@ function peer(port, succ_port, pred_port) {
   }
 
   function updateFingerTable(peer, i){
+    var hashMaxLength = (_hashLength * 4)-1;
+    var fingerTableEntry = _fingerTable[i].id;
 
-
-    if(peer.id >= _this.id && peer.id < _fingerTable[i].id){
+    if((peer.id >= _this.id && peer.id < fingerTableEntry)
+      || (fingerTableEntry < _this.id && 
+          ((hashMaxLength >= peer.id && peer.id >= _this.id)
+            ||  (  peer.id >= 0 && peer.id < fingerTableEntry)))){
 
       peer.fingerID = _fingerTable[i].fingerID;
       _fingerTable[i] = peer;
@@ -358,6 +362,9 @@ function peer(port, succ_port, pred_port) {
 
 }
 
+Number.prototype.mod = function(n) {
+    return ((this%n)+n)%n;
+};
 
 module.exports = new peer(process.env.PORT, process.env.PORTSUCC, process.env.PORTPRED);
 if (process.env.JOIN == 'true') {
