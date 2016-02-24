@@ -97,7 +97,7 @@ function peer(port, succ_port, pred_port) {
     else {
       // searched id is not this node, nor its immediate neighbourhood;
       // pass request around the ring through our successor
-      getRequest(_successor, '/peerRequests/find_successor/'+id, function(response){
+      getRequest(closestPreceedingFinger(id), '/peerRequests/find_successor/'+id, function(response){
             callback(JSON.parse(response));
       });
     }
@@ -116,7 +116,7 @@ function peer(port, succ_port, pred_port) {
       callback(_this);
     }
     else {
-      getRequest(_successor, '/peerRequests/find_predecessor/'+id, function(response){
+      getRequest(closestPreceedingFinger(id), '/peerRequests/find_predecessor/'+id, function(response){
             callback(JSON.parse(response));
       });
     }
@@ -146,6 +146,7 @@ function peer(port, succ_port, pred_port) {
   function join(peer) {
     joined = false;
     getRequest(peer, '/peerRequests/find_successor/'+_this.id, function(response){
+
             setSuccessor(JSON.parse(response));     
             getRequest(_successor, '/peerRequests/find_predecessor/'+_successor.id, function(response){
               _predecessor = JSON.parse(response);
@@ -358,7 +359,6 @@ function peer(port, succ_port, pred_port) {
 
   function updateFingerTable(peer, i){
 
-    console.log("FINGER TABLE LENGTH: " + _fingerTable.length + "    UPDATING ENTRY i: " + i)
 
     var hashMaxLength = (_hashLength * 4)-1;
     var ith_finger_node = _fingerTable[i].id;
@@ -373,6 +373,24 @@ function peer(port, succ_port, pred_port) {
 
   function fingerStart(k){
     return (_this.id + Math.pow(2, k-1)) % Math.pow(2, _hashLength*4);
+  }
+
+  function closestPreceedingFinger(key){
+    
+    var currentKey = _successor;
+
+    for(i = _fingerTable.length-1; i > 0; i--){
+      if((_fingerTable[i].id >= _this.id && _fingerTable[i].id <= key) ||
+         (key < _this.id && (_fingerTable[i].id > _this.id || _fingerTable[i].id < key))){
+        if(_fingerTable[i].id != _this.id){
+
+
+        return _fingerTable[i];
+        }
+      }
+    }
+    console.log("SHOULD NEVER OCCUR");
+
   }
 
   /////////////////////////
@@ -390,8 +408,6 @@ function peer(port, succ_port, pred_port) {
               'content-type': 'application/json',
           }
     };
-
-    console.log("POST OPTIONS:    " + JSON.stringify(post_options))
 
     // perform request and handle response
     var post_req = http.request(post_options, function(res) {
