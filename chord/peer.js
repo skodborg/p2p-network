@@ -7,7 +7,7 @@ function peer(port, succ_port, pred_port) {
   var _successor;
   var _predecessor;
   var _fingerTable = [];
-  var _hashLength = 1;
+  var _hashLength = 3;
 
   function hashId(id){
     if (process.env.NOHASHING == 'true') {
@@ -25,7 +25,7 @@ function peer(port, succ_port, pred_port) {
   }
 
   function createPeer(ip, port){
-    return {id : hashId(ip + port), ip : ip, port: port};
+    return {id : hashId(ip + port), ip : ip, port: parseInt(port)};
   }
 
   var _this = createPeer('localhost', port);
@@ -147,8 +147,11 @@ function peer(port, succ_port, pred_port) {
     joined = false;
     getRequest(peer, '/peerRequests/find_successor/'+_this.id, function(response){
             setSuccessor(JSON.parse(response));     
-            postRequest(_successor, '/peerRequests/notify', _this , function(response){
+            getRequest(_successor, '/peerRequests/find_predecessor/'+_successor.id, function(response){
+              _predecessor = JSON.parse(response);
+              
               initFingertable();
+              
             });
     });
 
@@ -251,7 +254,9 @@ function peer(port, succ_port, pred_port) {
       i = 1;
     }
     if(i >= _hashLength*4){
-      updateOthers();
+      postRequest(_successor, '/peerRequests/notify', _this , function(response){
+        updateOthers();
+      });
       return;
     }
     var fingerID = fingerStart(i+1);
@@ -283,7 +288,7 @@ function peer(port, succ_port, pred_port) {
       var pred_search_id = (_this.id - Math.pow(2, i-1)).mod(Math.pow(2, _hashLength*4));
       getRequest(_successor, '/peerRequests/find_predecessor/'+pred_search_id, function(response){
         returnedPredecessor = JSON.parse(response);
-        console.log("FOUND predecessor = " + returnedPredecessor.id + " LOOKING FOR id = " + pred_search_id)
+        // console.log("FOUND predecessor = " + returnedPredecessor.id + " LOOKING FOR id = " + pred_search_id)
         postRequest(returnedPredecessor, '/peerRequests/updateFingerTable', {peer : _this, i : i}, function(response){});
         updateOthers(i+1); 
       });
@@ -293,32 +298,19 @@ function peer(port, succ_port, pred_port) {
 
   // TODO: FIX OFF-BY-ONE IN ASSIGNMENTS
   function is_between(this_id, between_peer, ith_finger, i) {
-    console.log("this_id: " + this_id)
-    console.log("between_peer: " + between_peer)
-    console.log("ith_finger: " + ith_finger)
-    console.log("i: " + i)
-    console.log("fingerStart(i): " + fingerStart(i))
-    
-    if (this_id <= between_peer && between_peer < ith_finger) {
-      console.log("TRUE")
-      return true;
-    }
+    // console.log("this_id: " + this_id)
+    // console.log("between_peer: " + between_peer)
+    // console.log("ith_finger: " + ith_finger)
+    // console.log("i: " + i)
+    // console.log("fingerStart(i): " + fingerStart(i))
 
-    else if (ith_finger < this_id && between_peer < ith_finger) {
-      console.log("TRUE")
-      return true;
-    }
-
-    else if (ith_finger < this_id && between_peer > this_id) {
-      console.log("TRUE")
-      return true;
-    }
-    else if(ith_finger == this_id){
-      console.log("ith finger value: " + fingerStart(i))
+    // this_id equals ith_finger, true when joining
+    if(ith_finger == this_id){
+      // console.log("ith finger value: " + fingerStart(i))
       if(between_peer > this_id){
 
         if(fingerStart(i) <= between_peer){
-          console.log("TRUE")
+          // console.log("TRUE 4")
           return true;
         }
 
@@ -326,17 +318,47 @@ function peer(port, succ_port, pred_port) {
 
       if(between_peer < this_id){
           if(fingerStart(i) > this_id || fingerStart(i) <= between_peer){
-            console.log("TRUE")
+            // console.log("TRUE 5")
             return true;
           }
       }
     }
-    console.log("FALSE")
+
+
+    if (!(between_peer >= fingerStart(i) || 
+         (ith_finger < fingerStart(i) && between_peer < ith_finger))) {
+      // if between_peer is smaller than the finger table id it is supposed to be the immediate
+      // successor of, then it obviously isn't, and we return false
+
+      // otherwise, if the ith_finger is smaller than the finger table id it is the immediate
+      // successor of, we are handling the over-the-top case, and we need to make sure that
+      // the new between_peer is smaller than the previous ith_finger (to jump 'less' over the top)
+      return false;
+    }
+    
+    if (this_id <= between_peer && between_peer < ith_finger) {
+      // console.log("TRUE 1")
+      return true;
+    }
+
+    else if (ith_finger < this_id && between_peer < ith_finger) {
+      // console.log("TRUE 2")
+      return true;
+    }
+
+    else if (ith_finger < this_id && between_peer > this_id) {
+      // console.log("TRUE 3")
+      return true;
+    }
+    
+    // console.log("FALSE")
     
     return false;
   }
 
   function updateFingerTable(peer, i){
+
+    console.log("FINGER TABLE LENGTH: " + _fingerTable.length + "    UPDATING ENTRY i: " + i)
 
     var hashMaxLength = (_hashLength * 4)-1;
     var ith_finger_node = _fingerTable[i].id;
@@ -350,7 +372,7 @@ function peer(port, succ_port, pred_port) {
   }
 
   function fingerStart(k){
-    return (_this.id + Math.pow(2, k-1)) %  Math.pow(2, _hashLength*4);
+    return (_this.id + Math.pow(2, k-1)) % Math.pow(2, _hashLength*4);
   }
 
   /////////////////////////
@@ -368,6 +390,8 @@ function peer(port, succ_port, pred_port) {
               'content-type': 'application/json',
           }
     };
+
+    console.log("POST OPTIONS:    " + JSON.stringify(post_options))
 
     // perform request and handle response
     var post_req = http.request(post_options, function(res) {
