@@ -251,11 +251,11 @@ function peer(port, succ_port, pred_port) {
   }
 
   function initFingertable(i){
-    if(typeof i === 'undefined'){
+    if (typeof i === 'undefined') {
       i = 1;
     }
-    if(i >= _hashLength*4){
-      postRequest(_successor, '/peerRequests/notify', _this , function(response){
+    if (i >= _hashLength*4) {
+      postRequest(_successor, '/peerRequests/notify', _this , function(response) {
         updateOthers();
       });
       return;
@@ -265,63 +265,49 @@ function peer(port, succ_port, pred_port) {
       _fingerTable[i+1] = JSON.parse(JSON.stringify(_fingerTable[i]));
       _fingerTable[i+1].fingerID = fingerID;
       initFingertable(i+1);
-    }else{
-      getRequest(_successor, '/peerRequests/find_successor/'+fingerID, function(response){
-          returnedSuccessor = JSON.parse(response);
+    }
+    else {
+      getRequest(_successor, '/peerRequests/find_successor/'+fingerID, function(response) {
+        returnedSuccessor = JSON.parse(response);
 
-          returnedSuccessor.fingerID = fingerID;
+        returnedSuccessor.fingerID = fingerID;
 
-          _fingerTable[i+1] = returnedSuccessor;
-          initFingertable(i+1);
+        _fingerTable[i+1] = returnedSuccessor;
+        initFingertable(i+1);
       });
     }
   }
 
   function updateOthers(i){
-      if(typeof i === 'undefined'){
-      i = 1;
+      if (typeof i === 'undefined') {
+        i = 1;
       }
-      if(i > _hashLength*4){
+      if (i > _hashLength*4) {
         return;
       }
     
-      //var pred_search_id = math.mod((_this.id - Math.pow(2, i-1)), Math.pow(2, _hashLength*4));
       var pred_search_id = (_this.id - Math.pow(2, i-1)).mod(Math.pow(2, _hashLength*4));
       getRequest(_successor, '/peerRequests/find_predecessor/'+pred_search_id, function(response){
         returnedPredecessor = JSON.parse(response);
-        // console.log("FOUND predecessor = " + returnedPredecessor.id + " LOOKING FOR id = " + pred_search_id)
         postRequest(returnedPredecessor, '/peerRequests/updateFingerTable', {peer : _this, i : i}, function(response){});
         updateOthers(i+1); 
       });
     
   }
 
-
-  // TODO: FIX OFF-BY-ONE IN ASSIGNMENTS
   function is_between(this_id, between_peer, ith_finger, i) {
-    // console.log("this_id: " + this_id)
-    // console.log("between_peer: " + between_peer)
-    // console.log("ith_finger: " + ith_finger)
-    // console.log("i: " + i)
-    // console.log("fingerStart(i): " + fingerStart(i))
-
-    // this_id equals ith_finger, true when joining
+    // WHEN JOINING: this_id equals ith_finger, true when joining
     if(ith_finger == this_id){
-      // console.log("ith finger value: " + fingerStart(i))
-      if(between_peer > this_id){
-
-        if(fingerStart(i) <= between_peer){
-          // console.log("TRUE 4")
+      if(between_peer > this_id) {
+        if(fingerStart(i) <= between_peer) {
           return true;
         }
-
       }
 
       if(between_peer < this_id){
-          if(fingerStart(i) > this_id || fingerStart(i) <= between_peer){
-            // console.log("TRUE 5")
-            return true;
-          }
+        if(fingerStart(i) > this_id || fingerStart(i) <= between_peer){
+          return true;
+        }
       }
     }
 
@@ -338,22 +324,16 @@ function peer(port, succ_port, pred_port) {
     }
     
     if (this_id <= between_peer && between_peer < ith_finger) {
-      // console.log("TRUE 1")
       return true;
     }
 
     else if (ith_finger < this_id && between_peer < ith_finger) {
-      // console.log("TRUE 2")
       return true;
     }
 
     else if (ith_finger < this_id && between_peer > this_id) {
-      // console.log("TRUE 3")
       return true;
     }
-    
-    // console.log("FALSE")
-    
     return false;
   }
 
@@ -375,22 +355,17 @@ function peer(port, succ_port, pred_port) {
     return (_this.id + Math.pow(2, k-1)) % Math.pow(2, _hashLength*4);
   }
 
-  function closestPreceedingFinger(key){
-    
+  function closestPreceedingFinger(key) {
     var currentKey = _successor;
 
-    for(i = _fingerTable.length-1; i > 0; i--){
+    for(i = _fingerTable.length-1; i > 0; i--) {
       if((_fingerTable[i].id >= _this.id && _fingerTable[i].id <= key) ||
-         (key < _this.id && (_fingerTable[i].id > _this.id || _fingerTable[i].id < key))){
-        if(_fingerTable[i].id != _this.id){
-
-
-        return _fingerTable[i];
+         (key < _this.id && (_fingerTable[i].id > _this.id || _fingerTable[i].id < key))) {
+        if(_fingerTable[i].id != _this.id) {
+          return _fingerTable[i];
         }
       }
     }
-    console.log("SHOULD NEVER OCCUR");
-
   }
 
   /////////////////////////
