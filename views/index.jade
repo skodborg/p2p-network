@@ -90,11 +90,15 @@ block content
        tr
          td Photon Id
          td Access token
+         td Diode Status
+         td Light Status
        - if(resourceList.length > 0){
        for entry in resourceList
          tr
            td #{entry.photonId}
            td #{entry.accessToken}
+           td updating
+           td updating
        - }
 
 

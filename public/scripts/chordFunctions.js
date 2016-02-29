@@ -137,7 +137,7 @@ function updateResourceList(){
 	newData = JSON.parse(newData);
 		newData = newData.resourceList;
 
-		var table = "<table>";
+		var table = "<h3>ResourceList</h3><table>";
 		table+= "<td>";
 		table+= "Photon Id";
 		table+="</td>";
