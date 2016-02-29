@@ -9,7 +9,8 @@ function handleBaseDesign(req, res, next){
     {thisPeer : peer.get_this() ,
     succ : peer.get_successor(), 
     pred : peer.get_predecessor(),
-    fingerTable : peer.getFingertable()
+    fingerTable : peer.getFingertable(),
+    resourceList : peer.getResourceList()
   });
 }
 

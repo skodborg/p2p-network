@@ -49,6 +49,21 @@ router.get('/find_successor/:id*', function(req, res, next) {
   });
 });
 
+router.get('/find_resource/:id*', function(req, res, next) {
+  var peer = req.app.get('peer');
+  var id = req.params.id;
+
+
+
+  res.setHeader('Content-Type', 'application/json');
+
+  peer.find_resource(id, function(json){
+    res.set("Connection", "close");
+    res.send(JSON.stringify(json));
+  });
+
+});
+
 router.get('/fingertable', function(req, res, next) {
   var peer = req.app.get('peer');
   res.setHeader('Content-Type', 'application/json');
@@ -112,6 +127,27 @@ router.post('/updateFingerTable', function(req, res, next) {
   peer.updateFingerTable(body.peer, body.i);
   res.send(JSON.stringify({status: "ok"}));
 });
+
+router.post('/registerPhoton', function(req, res, next) {
+  var peer = req.app.get('peer');
+  var body = req.body;
+
+  peer.registerPhoton(body);
+
+  res.send(JSON.stringify({status: "ok"}));
+});
+
+router.get('/resourceList', function(req, res, next){
+  var peer = req.app.get('peer');
+  res.send(JSON.stringify({resourceList : peer.getResourceList()}));
+});
+
+router.put('/resourceList', function(req, res, next){
+  var peer = req.app.get('peer');
+  peer.moveResourceKeys();
+  res.send(JSON.stringify({status : "ok"}));
+});
+
 
 
 module.exports = router;

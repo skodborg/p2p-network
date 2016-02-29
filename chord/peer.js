@@ -8,6 +8,7 @@ function peer(port, succ_port, pred_port) {
   var _predecessor;
   var _fingerTable = [];
   var _hashLength = 3;
+  var _resourceList = [];
 
   function hashId(id){
     if (process.env.NOHASHING == 'true') {
@@ -283,6 +284,7 @@ function peer(port, succ_port, pred_port) {
         i = 1;
       }
       if (i > _hashLength*4) {
+        putRequest(_successor, '/peerRequests/resourceList', {}, function(response){});
         return;
       }
     
@@ -373,6 +375,53 @@ function peer(port, succ_port, pred_port) {
   /////////////////////////
 
 
+  function registerPhoton(photon){
+    var hashedID = hashId(photon.photonId);
+    find_successor(hashedID, function(data){
+      var index = listContains(photon, _resourceList);
+      console.log("_this : " + JSON.stringify(_this) + " === " + JSON.stringify(data) + " is " + (_this == data) 
+        + "  HASH value = " + hashedID);
+      if(_this.id == data.id){
+
+        if(index == -1){
+          _resourceList.push(photon);
+        }
+
+      }else{
+        if(index != -1){
+          _resourceList.pop(_resourceList[index]);
+        }
+        postRequest(data, '/peerRequests/registerPhoton', photon , function(response){});
+      }
+    });
+
+
+  }
+
+  function listContains(object, list){
+    var i = list.length;
+    while(i--){
+      if(list[i].photonId == object.photonId) break;
+    }
+    return i;
+  }
+
+  function getResourceList(){
+    return _resourceList;
+  }
+
+  function moveResourceKeys(){
+    var i = _resourceList.length;
+    while(i--){
+      registerPhoton(_resourceList[i]);
+    }
+  }
+
+  function find_resource(id, callback){
+
+    find_successor(hashId(id), callback);
+  }
+
   function httpRequest(peer, link, content, callback, method) {
     var post_options = {
           host : peer.ip,
@@ -408,6 +457,7 @@ function peer(port, succ_port, pred_port) {
   return {
       find_successor : find_successor,
       find_predecessor : find_predecessor,
+      find_resource : find_resource,
       join : join,
       get_successor : get_successor,
       get_predecessor : get_predecessor,
@@ -419,8 +469,10 @@ function peer(port, succ_port, pred_port) {
       get_this : get_this,
       getFingertable : getFingertable,
       updateFingerTable : updateFingerTable,
-      fix_fingers : fix_fingers
-
+      fix_fingers : fix_fingers,
+      registerPhoton : registerPhoton,
+      getResourceList : getResourceList,
+      moveResourceKeys : moveResourceKeys
     }
 
 

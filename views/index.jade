@@ -40,11 +40,20 @@ block content
   .findID
     form(id="findID")
       .inputId
-        p Search for id:
+        p Search for successor:
         input(name="id")
       .action
         input(type="submit", value="SEARCH")
     .findIDResult
+
+  .searchID
+    form(id="searchID")
+      .inputId
+        p Search for resource:
+        input(name="id")
+      .action
+        input(type="submit", value="SEARCH")
+    .searchIDResult
 
   .leave
     input(type="submit" value="leave ring" id="leave")
@@ -64,5 +73,28 @@ block content
             td #{entry.port}
             td #{entry.id}
         - }
+
+  .photon
+    form(id="photonDevice")
+       .inputId
+         p Photon ID:
+         input(name="id", value="420031000447343337373738")
+       .inputAccessToken
+         p Access token:
+         input(name="accessToken", value="f39e46cd03923232f0f37d51ecbf2a11c85c2cde")
+       .button
+         input(type="submit", value="Register photon")
+  .resourceList
+    h3 ResourceList
+    table
+       tr
+         td Photon Id
+         td Access token
+       - if(resourceList.length > 0){
+       for entry in resourceList
+         tr
+           td #{entry.photonId}
+           td #{entry.accessToken}
+       - }
 
 
