@@ -71,8 +71,15 @@ function peer(port, succ_port, pred_port) {
   function leave(){
     deleteRequest(_successor, '/peerRequests/predecessor' , function(response){
           putRequest(_predecessor, '/peerRequests/successor', _successor , function(response){
+                var i = _resourceList.length;
+
+                while(i--){
+                  postRequest(_successor, '/peerRequests/registerPhoton', _resourceList[i], function(response){ });
+                }
+
                 setSuccessor(nullPeer);
                 _predecessor = nullPeer;
+
           });      
     });
   }
@@ -98,8 +105,13 @@ function peer(port, succ_port, pred_port) {
     else {
       // searched id is not this node, nor its immediate neighbourhood;
       // pass request around the ring through our successor
+      console.log("closestPreceedingFinger("+id+")" + closestPreceedingFinger(id));
       getRequest(closestPreceedingFinger(id), '/peerRequests/find_successor/'+id, function(response){
             callback(JSON.parse(response));
+      }, function(){
+        getRequest(_successor, '/peerRequests/find_successor/'+id, function(response){
+          callback(JSON.parse(response));
+        });
       });
     }
   }
@@ -203,11 +215,14 @@ function peer(port, succ_port, pred_port) {
     });
   }
 
-  function postRequest(peer, link, content, callback) {
-    httpRequest(peer, link, content, callback, "POST");
+  function postRequest(peer, link, content, callback, errorCallback) {
+    httpRequest(peer, link, content, callback, "POST", errorCallback);
   }
 
-  function getRequest(peer, link, callback){
+  function getRequest(peer, link, callback, errorCallback, tries){
+     if(typeof tries !== 'undefined'){
+      tries = 3;
+     }
      var get_options = {
         host : peer.ip,
         port: peer.port,
@@ -223,15 +238,21 @@ function peer(port, succ_port, pred_port) {
       res.on('end', function() {
         callback(response);
       });
+    }).on('error', function(err) {
+        if(typeof errorCallback !== 'undefined' && tries == 0){
+          errorCallback();
+        }else{
+          getRequest(peer, link, callback, errorCallback, (tries--));
+      }
     });
   }
 
-  function deleteRequest(peer, link, callback) {
-    httpRequest(peer, link, "", callback, "DELETE");
+  function deleteRequest(peer, link, callback, errorCallback) {
+    httpRequest(peer, link, "", callback, "DELETE", errorCallback);
   }
 
-  function putRequest(peer, link, content, callback) {
-    httpRequest(peer, link, content, callback, "PUT");
+  function putRequest(peer, link, content, callback, errorCallback) {
+    httpRequest(peer, link, content, callback, "PUT", errorCallback);
   }
 
   function setSuccessor(successor){
@@ -358,8 +379,6 @@ function peer(port, succ_port, pred_port) {
   }
 
   function closestPreceedingFinger(key) {
-    var currentKey = _successor;
-
     for(i = _fingerTable.length-1; i > 0; i--) {
       if((_fingerTable[i].id >= _this.id && _fingerTable[i].id <= key) ||
          (key < _this.id && (_fingerTable[i].id > _this.id || _fingerTable[i].id < key))) {
@@ -368,6 +387,7 @@ function peer(port, succ_port, pred_port) {
         }
       }
     }
+    return _successor;
   }
 
   /////////////////////////
@@ -379,19 +399,21 @@ function peer(port, succ_port, pred_port) {
     var hashedID = hashId(photon.photonId);
     find_successor(hashedID, function(data){
       var index = listContains(photon, _resourceList);
-      console.log("_this : " + JSON.stringify(_this) + " === " + JSON.stringify(data) + " is " + (_this == data) 
-        + "  HASH value = " + hashedID);
       if(_this.id == data.id){
 
         if(index == -1){
+
           _resourceList.push(photon);
         }
 
       }else{
+
         if(index != -1){
+
           _resourceList.pop(_resourceList[index]);
         }
         postRequest(data, '/peerRequests/registerPhoton', photon , function(response){});
+
       }
     });
 
@@ -422,7 +444,10 @@ function peer(port, succ_port, pred_port) {
     find_successor(hashId(id), callback);
   }
 
-  function httpRequest(peer, link, content, callback, method) {
+  function httpRequest(peer, link, content, callback, method, errorCallback, tries) {
+    if(typeof tries !== 'undefined'){
+      tries = 3;
+    }
     var post_options = {
           host : peer.ip,
           port: peer.port,
@@ -434,6 +459,7 @@ function peer(port, succ_port, pred_port) {
     };
 
     // perform request and handle response
+
     var post_req = http.request(post_options, function(res) {
         var response = "";
         res.on('data', function(chunk) {
@@ -442,17 +468,26 @@ function peer(port, succ_port, pred_port) {
 
         res.on('end', function() {
           callback(response);
+          tries = -1;
         });
     });
-
     post_req.write(JSON.stringify( content ));
+
+    post_req.on('error', function(err) {
+      if(typeof errorCallback !== 'undefined' && tries == 0){
+        errorCallback();
+      }else{
+        httpRequest(peer, link, content, callback, method, errorCallback, (tries--));
+      }
+    });
+
     post_req.end();
   }
 
 
   if(process.env.STABILIZE == 'ON'){
     setInterval(stabilize, 1000);
-    // setInterval(fix_fingers(), 1000);
+    setInterval(fix_fingers, 1000);
   }
   return {
       find_successor : find_successor,
