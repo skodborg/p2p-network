@@ -209,6 +209,9 @@ function peer(port, succ_port, pred_port) {
   }
 
   function fix_fingers() {
+    if(_successor.id == "null" ){
+      return;
+    }
     // find the successor peer of the key corresponding to the ith finger table
     // entry and update the table with this peer
     var i = Math.floor(Math.random() * (_fingerTable.length - 1)) + 1;
