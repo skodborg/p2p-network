@@ -12,3 +12,10 @@ a {
 	top: 90px;
 	left: 400px;
 }
+.graph{
+	position: absolute;
+	width: 480px;
+	height: 400px;
+	top: 0px; 
+	left: 700px;
+}

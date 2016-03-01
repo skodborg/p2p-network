@@ -61,9 +61,12 @@ function prepPage(){
 	});
 
 	setInterval(updatePeerData, 5000);
+	createDataTable();
+	
 }
 var testData = "teest";
 function updatePeerData(){
+	createDataTable();
 	$.get( "peerRequests/successor", function( newData ) { 
 		newData = JSON.parse(newData);
 		$("#succ .ip").html(newData.ip);
@@ -210,3 +213,35 @@ function toggleDiode(photonId, accessToken){
 function createLink(data){
 	 return '<a href="http://'+data.ip+':'+data.port+'">Click here</a>';
 }
+
+function createDataTable(){
+	
+	$.get( "peerRequests/resourceTable", function(response){
+		console.log(response);
+
+
+		var dataList = response.resourceList;
+
+		var i = dataList.length;
+
+		var data = [];
+
+		while(i--){
+
+			var lightData = dataList[i].lightData;
+			var timeStamps = dataList[i].timeStamps;
+			var diodeData = dataList[i].diodeData;
+
+			var trace1 = { x : timeStamps, y : lightData, type : 'scatter', name: dataList[i].id};
+			//var trace2 = { x : timeStamps, y : diodeData, type : 'scatter', name: dataList[i].id};
+			data.push(trace1);
+			//data.push(trace2);
+
+		}
+
+		Plotly.newPlot('graph', data);
+	});
+	
+
+}
+

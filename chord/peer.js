@@ -1,5 +1,9 @@
 var http = require('http');
+var https = require('https');
+
 const crypto = require('crypto');
+
+var nano = require('nano')('http://localhost:5984');
 
 var nullPeer = { id : "null", ip : "null", port: "null" };
 
@@ -9,6 +13,9 @@ function peer(port, succ_port, pred_port) {
   var _fingerTable = [];
   var _hashLength = 3;
   var _resourceList = [];
+
+  nano.db.create("port" + port);
+  var dbOnPort = nano.db.use("port" + port);
 
   function hashId(id){
     if (process.env.NOHASHING == 'true') {
@@ -105,7 +112,6 @@ function peer(port, succ_port, pred_port) {
     else {
       // searched id is not this node, nor its immediate neighbourhood;
       // pass request around the ring through our successor
-      console.log("closestPreceedingFinger("+id+")" + closestPreceedingFinger(id));
       getRequest(closestPreceedingFinger(id), '/peerRequests/find_successor/'+id, function(response){
             callback(JSON.parse(response));
       }, function(){
@@ -244,6 +250,28 @@ function peer(port, succ_port, pred_port) {
         }else{
           getRequest(peer, link, callback, errorCallback, (tries--));
       }
+    });
+  }
+
+  function getRequestOut(link, callback){
+     var get_options = {
+        host : 'api.spark.io',
+        path : link, 
+        //port: 80,
+        //url: link,
+        //url: "www.simonfischer.com",
+        followAllRedirects: true,
+        agent: false
+    };
+    https.get(get_options, function(res) {
+      var response = "";
+      res.on('data', function(chunk) {
+        response += chunk;
+      });
+
+      res.on('end', function() {
+        callback(response);
+      });
     });
   }
 
@@ -485,10 +513,86 @@ function peer(port, succ_port, pred_port) {
   }
 
 
+  function logResourceList(){
+    var i = _resourceList.length;
+    while(i--){
+      var host = "https://api.spark.io";
+      var base = "/v1/devices/"+ _resourceList[i].photonId+"/";
+      var link = base + "light?access_token="+ _resourceList[i].accessToken;
+      var link2 = base + "diode?access_token="+ _resourceList[i].accessToken;
+      var photonId = _resourceList[i].photonId;
+
+      getRequestOut(link, function(response){
+        var lightData = JSON.parse(response);
+        getRequestOut(link2, function(reponse){
+          var diodeData = JSON.parse(reponse);
+          logResourceData(lightData.result, diodeData.result, photonId);
+        });
+      });
+        //"/v1/devices/"+ photon.photonId+"/light?access_token="+ photon.accessToken
+    }
+  }
+
+
+  function getResourceData(callback, i){
+    
+    var keys = {keys : []};
+    var i = _resourceList.length;
+    var returnValue = { resourceList : []};
+    while(i--){
+      keys.keys.push("dataId" + _resourceList[i].photonId);
+    }
+    dbOnPort.fetch(keys, function(err, body){
+      var values = body.rows;
+      var returnValue = {resourceList : []};
+
+      i = values.length;
+
+      while(i--){
+        var tempDoc = values[i].doc;
+        delete tempDoc['_rev'];
+        var id = tempDoc._id;
+
+        id = id.slice(6, id.length);
+
+        delete tempDoc['_id']
+
+        tempDoc.id = id;
+
+        returnValue.resourceList.push(tempDoc);
+      }
+      callback(returnValue);
+    });
+  }
+
+  function logResourceData(lightData, diodeData, dataId){
+
+     dbOnPort.get("dataId"+dataId, function(err, body){
+      if(err || typeof body == 'undefined'){
+        body = {
+          lightData : [],
+          diodeData : [],
+          timeStamps : []
+        }
+      }
+
+      body.lightData.push(lightData);
+      body.diodeData.push(diodeData);
+      body.timeStamps.push(new Date().getTime());
+      dbOnPort.insert(body, "dataId"+dataId);
+
+    }); 
+  }
+
   if(process.env.STABILIZE == 'ON'){
     setInterval(stabilize, 1000);
     setInterval(fix_fingers, 1000);
+    setInterval(logResourceList, 5000);
   }
+
+
+
+
   return {
       find_successor : find_successor,
       find_predecessor : find_predecessor,
@@ -507,7 +611,8 @@ function peer(port, succ_port, pred_port) {
       fix_fingers : fix_fingers,
       registerPhoton : registerPhoton,
       getResourceList : getResourceList,
-      moveResourceKeys : moveResourceKeys
+      moveResourceKeys : moveResourceKeys,
+      getResourceData : getResourceData
     }
 
 

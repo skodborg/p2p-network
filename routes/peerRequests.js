@@ -148,6 +148,17 @@ router.put('/resourceList', function(req, res, next){
   res.send(JSON.stringify({status : "ok"}));
 });
 
+router.get('/resourceTable', function(req, res, next) {
+  var peer = req.app.get('peer');
+
+  var id = req.params.id;
 
 
+  res.set("Connection", "close");
+  res.setHeader('Content-Type', 'application/json');
+
+  peer.getResourceData(function(json){
+    res.send(JSON.stringify(json));
+  });
+});
 module.exports = router;
