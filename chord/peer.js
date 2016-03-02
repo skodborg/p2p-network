@@ -13,6 +13,7 @@ function peer(port, succ_port, pred_port) {
   var _fingerTable = [];
   var _hashLength = 3;
   var _resourceList = [];
+  var _kBackups = 3;
 
   nano.db.create("port" + port);
   var dbOnPort = nano.db.use("port" + port);
@@ -568,6 +569,44 @@ function peer(port, succ_port, pred_port) {
     });
   }
 
+  function getResourceDataFiltered(timeStamp, callBack){
+    getResourceData(function(response){
+      var data = response;
+      var i = data.resourceList.length;
+      var tempValue = data.resourceList;
+
+      var returnValue = {resourceList : []};
+      for(var resource in tempValue){
+
+        var returnResource = {id : tempValue[resource].id,
+                              timeStamps : [],
+                              lightData : [],
+                              diodeData : []};
+
+        
+
+        var timeStamps = tempValue[resource].timeStamps;
+        var lightData = tempValue[resource].lightData;
+        var diodeData = tempValue[resource].diodeData;
+
+        var i = timeStamps.length;
+
+        while(i--){
+          if(timeStamps[i] <= timeStamp){
+            break;
+          }
+        }
+        returnResource.timeStamps = timeStamps.slice((i+1));
+        returnResource.lightData = lightData.slice((i+1));
+        returnResource.diodeData = diodeData.slice((i+1));
+        returnValue.resourceList.push(returnResource);
+      }
+      callBack(returnValue);
+
+
+    });
+  }
+
   function logResourceData(lightData, diodeData, dataId){
 
      dbOnPort.get("dataId"+dataId, function(err, body){
@@ -587,10 +626,98 @@ function peer(port, succ_port, pred_port) {
     }); 
   }
 
+  function logResourceDataLists(lightData, diodeData, timeStamps, dataId){
+
+     dbOnPort.get("dataId"+dataId, function(err, body){
+      if(err || typeof body == 'undefined'){
+        body = {
+          lightData : [],
+          diodeData : [],
+          timeStamps : []
+        }
+      }
+      body.lightData = body.lightData.concat(lightData);
+      body.diodeData = body.diodeData.concat(diodeData);
+      body.timeStamps = body.timeStamps.concat(timeStamps);
+      dbOnPort.insert(body, "dataId"+dataId);
+
+    }); 
+  }
+
+  function calculateLatestTimeStamp(keys, callBack){
+    dbOnPort.fetch(keys, function(err, body){
+      if(err || typeof body == 'undefined'){
+        callBack(0);
+        return;
+      }
+      var values = body.rows;
+      var i = values.length;
+      var maxLength = 0;
+      while(i--){
+        var doc = values[i].doc;
+        if(doc != null){
+          var timeStamps = values[i].doc.timeStamps;
+          maxLength = Math.max(timeStamps[timeStamps.length-1], maxLength);
+        }
+      }
+      callBack(maxLength);
+    });
+  }
+
+  function updateBackup(body){
+    body.ithPeer--;
+    if(body.peer.id == _this.id){
+      return;
+    }
+    
+    if(body.ithPeer > 0 && body.peer.id != _successor.id){
+      putRequest(_successor, '/peerRequests/updateBackup', body , function(response){});
+    }
+
+    calculateLatestTimeStamp(body, function(latestSeenTimeStamp){ 
+
+      getRequest(body.peer, '/peerRequests/resourceTable/'+latestSeenTimeStamp, function(response){
+        var backupData = JSON.parse(response);
+        var resourceList = backupData.resourceList;
+        var i = resourceList.length;
+        while(i--){
+          var lightData = resourceList[i].lightData;
+          var diodeData = resourceList[i].diodeData;
+          var timeStamps = resourceList[i].timeStamps;
+          var dataId = resourceList[i].id;
+
+          if(timeStamps.length == 0){
+            break;
+          }
+          logResourceDataLists(lightData, diodeData, timeStamps, dataId);
+        }
+
+      });
+    });
+  }
+
+  function backupSuccessors(){
+    if(_successor.id == "null" ){
+      return;
+    }
+    
+    if(_resourceList.length == 0){
+      return;
+    }
+    var keys =  [];
+    var i = _resourceList.length;
+    while(i--){
+      keys.push("dataId" + _resourceList[i].photonId);
+    }
+    var data = {peer : _this, ithPeer : _kBackups, keys : keys}
+    putRequest(_successor, '/peerRequests/updateBackup', data , function(response){});
+  }
+
   if(process.env.STABILIZE == 'ON'){
     setInterval(stabilize, 1000);
     setInterval(fix_fingers, 1000);
     setInterval(logResourceList, 5000);
+    setInterval(backupSuccessors, 10000);
   }
 
 
@@ -615,7 +742,9 @@ function peer(port, succ_port, pred_port) {
       registerPhoton : registerPhoton,
       getResourceList : getResourceList,
       moveResourceKeys : moveResourceKeys,
-      getResourceData : getResourceData
+      getResourceData : getResourceData,
+      getResourceDataFiltered: getResourceDataFiltered,
+      updateBackup : updateBackup
     }
 
 

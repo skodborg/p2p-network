@@ -148,6 +148,18 @@ router.put('/resourceList', function(req, res, next){
   res.send(JSON.stringify({status : "ok"}));
 });
 
+
+router.put('/updateBackup', function(req, res, next){
+  var peer = req.app.get('peer');
+  var body = req.body;
+
+
+  peer.updateBackup(body);
+
+  res.send(JSON.stringify({status : "OK"}));
+
+});
+
 router.get('/resourceTable', function(req, res, next) {
   var peer = req.app.get('peer');
 
@@ -161,4 +173,19 @@ router.get('/resourceTable', function(req, res, next) {
     res.send(JSON.stringify(json));
   });
 });
+
+router.get('/resourceTable/:timeStamp*', function(req, res, next) {
+  var peer = req.app.get('peer');
+  var timeStamp = req.params.timeStamp;
+  
+
+  res.set("Connection", "close");
+  res.setHeader('Content-Type', 'application/json');
+  
+  peer.getResourceDataFiltered(timeStamp, function(json){
+    res.send(JSON.stringify(json));
+  });
+});
+
+
 module.exports = router;
