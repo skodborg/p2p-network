@@ -440,11 +440,17 @@ function peer(port, succ_port, pred_port) {
 
       }else{
 
-        if(index != -1){
+        
 
-          _resourceList.pop(_resourceList[index]);
-        }
-        postRequest(data, '/peerRequests/registerPhoton', photon , function(response){});
+        var content = {peer : _this, ithPeer : 1, keys : [photon.photonId]}
+        putRequest(data, '/peerRequests/updateBackup', content , function(response){
+          if(index != -1){
+
+            _resourceList.pop(_resourceList[index]);
+          }
+
+          postRequest(data, '/peerRequests/registerPhoton', photon , function(response){});
+      });
 
       }
     });
@@ -664,9 +670,10 @@ function peer(port, succ_port, pred_port) {
     });
   }
 
-  function updateBackup(body){
+  function updateBackup(body, callBack){
     body.ithPeer--;
     if(body.peer.id == _this.id){
+      callBack();
       return;
     }
     
@@ -691,16 +698,17 @@ function peer(port, succ_port, pred_port) {
           }
           logResourceDataLists(lightData, diodeData, timeStamps, dataId);
         }
-
+        callBack();
       });
     });
+
   }
 
   function backupSuccessors(){
     if(_successor.id == "null" ){
       return;
     }
-    
+
     if(_resourceList.length == 0){
       return;
     }

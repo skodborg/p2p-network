@@ -153,10 +153,10 @@ router.put('/updateBackup', function(req, res, next){
   var peer = req.app.get('peer');
   var body = req.body;
 
+  peer.updateBackup(body, function(){
+   res.send(JSON.stringify({status : "OK"}));
+  });
 
-  peer.updateBackup(body);
-
-  res.send(JSON.stringify({status : "OK"}));
 
 });
 
