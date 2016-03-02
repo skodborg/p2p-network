@@ -337,7 +337,10 @@ function peer(port, succ_port, pred_port) {
         i = 1;
       }
       if (i > _hashLength*4) {
-        putRequest(_successor, '/peerRequests/resourceList', {}, function(response){});
+        setTimeout(function(){
+
+          putRequest(_successor, '/peerRequests/resourceList', {}, function(response){});
+        }, 3000);
         return;
       }
     
@@ -429,7 +432,9 @@ function peer(port, succ_port, pred_port) {
 
   function registerPhoton(photon){
     var hashedID = hashId(photon.photonId);
+    console.log("hashed id: " + hashedID)
     find_successor(hashedID, function(data){
+      console.log(" Successor : " + JSON.stringify(data) + " this: " + JSON.stringify(_this));
       var index = listContains(photon, _resourceList);
       if(_this.id == data.id){
 
